@@ -15,6 +15,9 @@ public class GameState {
         this.players = players;
         this.roundCount = 0;
         this.movieDB = movieDB;
+        if (!players.isEmpty()) {
+            this.currentPlayer = players.get(0); // Start with the first player
+        }
         // Initialize other fields...
     }
 
@@ -28,13 +31,20 @@ public class GameState {
             usedConnections.add(connection);
         }
         playedMovies.add(movie);
-        // ... update currentPlayer, etc.
+        currentPlayer.updateProgress(movie);
+        nextPlayer(); // Move to the next player
+        roundCount++;
         return true;
+    }
+
+    private void nextPlayer() {
+        int currentIndex = players.indexOf(currentPlayer);
+        currentPlayer = players.get((currentIndex + 1) % players.size());
     }
 
     public Player checkWinCondition() {
         for (Player p : players) {
-            if (p.getWinCondition().checkProgress(playedMovies) >= /* some threshold */) {
+            if (p.hasWon(playedMovies)) {
                 return p;
             }
         }
