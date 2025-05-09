@@ -34,25 +34,3 @@ public class GenreWinStrategy implements IWinStrategy {
         return requiredCount;
     }
 }
-
-// Subject interface
-public interface Subject {
-    void registerObserver(Observer o);
-    void removeObserver(Observer o);
-    void notifyObservers();
-}
-
-// Observer interface
-public interface Observer {
-    void update();
-}
-
-// GameState implements Subject
-public class GameState implements Subject {
-    private List<Observer> observers = new ArrayList<>();
-    // ... existing code ...
-    public void registerObserver(Observer o) { observers.add(o); }
-    public void removeObserver(Observer o) { observers.remove(o); }
-    public void notifyObservers() { for (Observer o : observers) o.update(); }
-    // Call notifyObservers() whenever state changes
-}

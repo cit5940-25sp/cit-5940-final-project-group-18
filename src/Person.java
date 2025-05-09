@@ -1,5 +1,3 @@
-import java.util.List;
-
 public class Person {
     private int id;
     private String name;
@@ -21,10 +19,5 @@ public class Person {
 
     public String getRole() {
         return role;
-    }
-
-    public List<Movie> getMovies() {
-        // TODO: Implement logic to return movies for this person
-        return null;
     }
 }
