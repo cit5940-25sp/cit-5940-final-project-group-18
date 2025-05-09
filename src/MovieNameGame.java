@@ -55,7 +55,35 @@ public class MovieNameGame {
                 System.out.println("[DEBUG] Last movie played: " + gameState.getPlayedMovies().get(gameState.getPlayedMovies().size() - 1).getTitle());
             }
 
-            controller.processInput(input);
+            // Keep asking for input until we get a valid movie or game is over
+            while (!gameState.isGameOver()) {
+                // Store the current number of movies before processing
+                int moviesBefore = gameState.getPlayedMovies().size();
+                System.out.println("[DEBUG] Movies before processing: " + moviesBefore);
+                
+                controller.processInput(input);
+                
+                // If the game is over after processing, break out
+                if (gameState.isGameOver()) {
+                    System.out.println("[DEBUG] Game over detected, breaking reprompt loop");
+                    break;
+                }
+                
+                // If the number of movies hasn't changed, the input was invalid
+                // and we need to reprompt
+                if (gameState.getPlayedMovies().size() == moviesBefore) {
+                    System.out.println("[DEBUG] Invalid input detected - Movies after processing: " + gameState.getPlayedMovies().size());
+                    System.out.println("[DEBUG] Reprompting for new input...");
+                    System.out.print("Enter movie title: ");
+                    input = scanner.nextLine();
+                    System.out.println("[DEBUG] New input received: " + input);
+                } else {
+                    // Valid move was made, break out of the reprompt loop
+                    System.out.println("[DEBUG] Valid move detected - Movies after processing: " + gameState.getPlayedMovies().size());
+                    System.out.println("[DEBUG] Breaking reprompt loop");
+                    break;
+                }
+            }
 
             // Debug: Print game state after processing
             System.out.println("[DEBUG] After processing - Number of movies: " + gameState.getPlayedMovies().size());

@@ -50,9 +50,6 @@ public class GameController {
                     int newTime = currentTime - 1;
                     gameState.setTimer(newTime);
 
-                    // Print time remaining
-                    System.out.println("\r[Timer] Time remaining: " + newTime + " seconds");
-
                     // Check if time has run out
                     if (newTime <= 0) {
                         isTimerRunning.set(false);
@@ -74,10 +71,6 @@ public class GameController {
 
                         // Cancel this timer task
                         cancel();
-                    } else if (newTime <= 5) {
-                        // Warning for last 5 seconds
-                        System.out.println("\r[Timer] WARNING! " + newTime + " seconds remaining!");
-                        System.out.print("Enter movie title: "); // Reprint the prompt
                     }
                 }
             }
