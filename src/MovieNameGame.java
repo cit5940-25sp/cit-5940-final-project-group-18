@@ -1,3 +1,5 @@
+import com.opencsv.exceptions.CsvValidationException;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,12 +11,12 @@ public class MovieNameGame {
     private MovieDatabase movieDB;
     private GameState gameState;
 
-    public void startGame() throws IOException {
+    public void startGame() throws IOException, CsvValidationException {
         initializeComponents();
         gameLoop();
     }
 
-    private void initializeComponents() throws IOException {
+    private void initializeComponents() throws IOException, CsvValidationException {
         // Load movie database (update with actual CSV paths if needed)
         movieDB = new MovieDatabase("movies.csv", "credits.csv");
 
@@ -52,7 +54,7 @@ public class MovieNameGame {
         scanner.close();
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, CsvValidationException {
         new MovieNameGame().startGame();
     }
 }
