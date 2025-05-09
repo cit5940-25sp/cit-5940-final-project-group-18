@@ -19,12 +19,44 @@ class TestPlayer extends Player {
     public boolean hasWon(List<Movie> playedMovies) { return hasWonFlag; }
 }
 
+/**
+ * Test suite for the GameState class in the movie connection game.
+ * This class tests the core game state management functionality, including:
+ * - Game initialization and field setup
+ * - Movie move validation and processing
+ * - Player turn management
+ * - Win condition checking
+ * - Timer management
+ * - Game over state handling
+ * - Defensive copying of collections
+ * - Round counting
+ * - Current movie tracking
+ * - Connection tracking
+ * 
+ * Uses dummy implementations of IWinStrategy and Player for testing
+ * specific scenarios without complex win condition logic.
+ */
 public class GameStateTest {
+    /** The movie database used in tests */
     private MovieDatabase movieDB;
+    
+    /** Test players with controllable win conditions */
     private TestPlayer player1, player2;
+    
+    /** Test movies with predefined connections */
     private Movie movieA, movieB, movieC;
+    
+    /** The game state being tested */
     private GameState gameState;
 
+    /**
+     * Sets up the test environment before each test.
+     * Creates:
+     * - Test movies with shared actors and directors
+     * - A movie database with the test movies
+     * - Test players with dummy win strategies
+     * - A game state with the test components
+     */
     @Before
     public void setUp() {
         // Create people
@@ -50,15 +82,29 @@ public class GameStateTest {
         gameState = new GameState(Arrays.asList(player1, player2), movieDB);
     }
 
+    /**
+     * Tests proper initialization of game state fields.
+     * Verifies:
+     * - Round count starts at 0
+     * - First player is set correctly
+     * - Played movies list is empty
+     * - Player list is correctly initialized
+     */
     @Test
     public void testConstructorInitializesFields() {
         assertEquals(0, gameState.getRoundCount());
         assertEquals(player1, gameState.getCurrentPlayer());
         assertTrue(gameState.getPlayedMovies().isEmpty());
         assertEquals(2, gameState.getPlayers().size());
-        // movieDB is private, so we can't check directly, but we know it's used in makeMove
     }
 
+    /**
+     * Tests processing of valid movie moves.
+     * Verifies:
+     * - First move is always valid
+     * - Second move with connection is valid
+     * - Movies are added to played list
+     */
     @Test
     public void testMakeMoveValid() {
         boolean firstMove = gameState.makeMove(movieA);
@@ -68,6 +114,13 @@ public class GameStateTest {
         assertEquals(2, gameState.getPlayedMovies().size());
     }
 
+    /**
+     * Tests processing of invalid movie moves.
+     * Verifies:
+     * - First move is valid
+     * - Second move without connection is invalid
+     * - Only valid moves are added to played list
+     */
     @Test
     public void testMakeMoveInvalid() {
         boolean firstMove = gameState.makeMove(movieA);
@@ -77,6 +130,13 @@ public class GameStateTest {
         assertEquals(1, gameState.getPlayedMovies().size());
     }
 
+    /**
+     * Tests player turn switching functionality.
+     * Verifies:
+     * - Players alternate turns
+     * - Turn order cycles correctly
+     * - Current player updates after each move
+     */
     @Test
     public void testPlayerSwitching() {
         Player firstPlayer = gameState.getCurrentPlayer();
@@ -88,6 +148,12 @@ public class GameStateTest {
         assertEquals(firstPlayer, thirdPlayer); // Should cycle back
     }
 
+    /**
+     * Tests win condition checking.
+     * Verifies:
+     * - Win condition is detected
+     * - Correct player is identified as winner
+     */
     @Test
     public void testCheckWinCondition() {
         TestPlayer winPlayer = new TestPlayer("Winner", new DummyWinStrategy());
@@ -97,6 +163,13 @@ public class GameStateTest {
         assertEquals(winPlayer, state.checkWinCondition());
     }
 
+    /**
+     * Tests timer management functionality.
+     * Verifies:
+     * - Timer can be set
+     * - Timer decrements correctly
+     * - Game over when timer reaches zero
+     */
     @Test
     public void testTimerManagement() {
         gameState.setTimer(60);
@@ -112,6 +185,13 @@ public class GameStateTest {
         assertTrue(gameState.isGameOver());
     }
 
+    /**
+     * Tests game over state handling.
+     * Verifies:
+     * - Game over state can be set
+     * - Moves are blocked when game is over
+     * - Played movies list remains unchanged
+     */
     @Test
     public void testGameOverState() {
         gameState.setGameOver(true);
@@ -122,6 +202,12 @@ public class GameStateTest {
         assertEquals(0, gameState.getPlayedMovies().size());
     }
 
+    /**
+     * Tests defensive copying of collections.
+     * Verifies:
+     * - Modifications to returned lists don't affect internal state
+     * - All collection getters return defensive copies
+     */
     @Test
     public void testDefensiveCopies() {
         // Test that returned lists are defensive copies
@@ -138,6 +224,12 @@ public class GameStateTest {
         assertTrue(gameState.getUsedConnections().isEmpty());
     }
 
+    /**
+     * Tests round counting functionality.
+     * Verifies:
+     * - Round count starts at 0
+     * - Round count increments with each move
+     */
     @Test
     public void testRoundCount() {
         assertEquals(0, gameState.getRoundCount());
@@ -147,6 +239,12 @@ public class GameStateTest {
         assertEquals(2, gameState.getRoundCount());
     }
 
+    /**
+     * Tests current movie tracking.
+     * Verifies:
+     * - Current movie is null initially
+     * - Current movie updates with each move
+     */
     @Test
     public void testCurrentMovieTracking() {
         assertNull(gameState.getCurrentMovie());
@@ -156,6 +254,12 @@ public class GameStateTest {
         assertEquals(movieB, gameState.getCurrentMovie());
     }
 
+    /**
+     * Tests connection tracking.
+     * Verifies:
+     * - Connections are recorded for valid moves
+     * - Connections are valid
+     */
     @Test
     public void testUsedConnections() {
         gameState.makeMove(movieA);
@@ -165,6 +269,13 @@ public class GameStateTest {
         assertTrue(connections.get(0).isValid());
     }
 
+    /**
+     * Tests win condition checking with game over state.
+     * Verifies:
+     * - Win condition is detected
+     * - Game over state is set
+     * - Subsequent win checks return null
+     */
     @Test
     public void testWinConditionWithGameOver() {
         TestPlayer winPlayer = new TestPlayer("Winner", new DummyWinStrategy());
@@ -180,6 +291,12 @@ public class GameStateTest {
         assertNull(state.checkWinCondition());
     }
 
+    /**
+     * Tests handling of empty player list.
+     * Verifies:
+     * - Current player is null
+     * - Player list is empty
+     */
     @Test
     public void testEmptyPlayerList() {
         GameState emptyState = new GameState(new ArrayList<>(), movieDB);

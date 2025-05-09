@@ -7,24 +7,34 @@ import com.opencsv.exceptions.CsvValidationException;
 import java.util.stream.Collectors;
 
 /**
- * MovieDatabase class manages a collection of movies and provides functionality for
- * searching, autocomplete, and finding connections between movies.
- * It maintains several indices for efficient lookups:
- * - movieNameIndex: Maps movie titles to Movie objects
- * - personIndex: Maps person names to sets of movies they're involved in
- * - genreIndex: Maps genres to lists of movies
- * - movieTrie: Provides efficient prefix-based movie title search
+ * Manages a collection of movies and provides functionality for searching, autocomplete,
+ * and finding connections between movies. This class serves as the central data store
+ * for the movie connection game.
+ * 
+ * The database maintains several indices for efficient lookups:
+ * - movieNameIndex: Maps movie titles to Movie objects for O(1) title lookups
+ * - personIndex: Maps person names to sets of movies they're involved in for actor/director searches
+ * - genreIndex: Maps genres to lists of movies for genre-based filtering
+ * - movieTrie: Provides efficient prefix-based movie title search for autocomplete functionality
  */
 public class MovieDatabase {
+    /** Maps movie titles to their corresponding Movie objects for quick lookups */
     private Map<String, Movie> movieNameIndex;
+    
+    /** Maps person names to sets of movies they're involved in for connection validation */
     private Map<String, Set<Movie>> personIndex;
+    
+    /** Maps genres to lists of movies for genre-based filtering */
     private Map<String, List<Movie>> genreIndex;
+    
+    /** Trie data structure for efficient prefix-based movie title searches */
     private MovieTrie movieTrie;
 
     // ==================== CONSTRUCTORS ====================
 
     /**
      * Constructs an empty MovieDatabase with initialized data structures.
+     * All indices are created but remain empty until movies are added.
      */
     public MovieDatabase() {
         this.movieNameIndex = new HashMap<>();
@@ -35,8 +45,10 @@ public class MovieDatabase {
 
     /**
      * Constructs a MovieDatabase and initializes it with data from the specified CSV files.
-     * @param moviesPath Path to the movies CSV file
-     * @param creditsPath Path to the credits CSV file
+     * The database will be populated with movies, their genres, cast, and crew information.
+     *
+     * @param moviesPath Path to the movies CSV file containing movie metadata
+     * @param creditsPath Path to the credits CSV file containing cast and crew information
      * @throws IOException If there's an error reading the files
      * @throws CsvValidationException If there's an error parsing the CSV files
      */
@@ -49,7 +61,9 @@ public class MovieDatabase {
 
     /**
      * Adds a movie to the database and updates all relevant indices.
-     * @param movie The movie to add
+     * This method ensures the movie is properly indexed for all types of queries.
+     *
+     * @param movie The movie to add to the database
      */
     public void addMovie(Movie movie) {
         movieNameIndex.put(movie.getTitle(), movie);
@@ -63,7 +77,9 @@ public class MovieDatabase {
 
     /**
      * Finds a movie by its exact title.
-     * @param name The title of the movie to find
+     * This is a case-sensitive lookup that returns null if no exact match is found.
+     *
+     * @param name The exact title of the movie to find
      * @return The Movie object if found, null otherwise
      */
     public Movie findMovie(String name) {
@@ -78,7 +94,9 @@ public class MovieDatabase {
 
     /**
      * Gets all movies in the database.
-     * @return List of all Movie objects
+     * Returns a defensive copy of the movie collection to prevent external modification.
+     *
+     * @return List of all Movie objects in the database
      */
     public List<Movie> getAllMovies() {
         return new ArrayList<>(movieNameIndex.values());
@@ -88,6 +106,8 @@ public class MovieDatabase {
 
     /**
      * Gets autocomplete suggestions for a given prefix.
+     * Returns up to k movie titles that start with the given prefix.
+     *
      * @param prefix The prefix to search for
      * @param k The maximum number of suggestions to return
      * @return List of movie titles that start with the given prefix
@@ -97,8 +117,10 @@ public class MovieDatabase {
     }
 
     /**
-     * Gets autocomplete suggestions for a given prefix, case-insensitive.
-     * @param prefix The prefix to search for
+     * Gets case-insensitive autocomplete suggestions for a given prefix.
+     * Returns up to k movie titles that start with the given prefix, ignoring case.
+     *
+     * @param prefix The prefix to search for (case-insensitive)
      * @param k The maximum number of suggestions to return
      * @return List of movie titles that start with the given prefix (case-insensitive)
      */
@@ -107,7 +129,9 @@ public class MovieDatabase {
     }
 
     /**
-     * Gets autocomplete suggestions for a given prefix with a minimum length filter.
+     * Gets autocomplete suggestions with a minimum length filter.
+     * Returns up to k movie titles that start with the given prefix and meet the length requirement.
+     *
      * @param prefix The prefix to search for
      * @param k The maximum number of suggestions to return
      * @param minLength The minimum length of movie titles to include
@@ -125,6 +149,8 @@ public class MovieDatabase {
     /**
      * Validates if there is a valid connection between two movies.
      * A valid connection exists if the movies share any cast or crew members.
+     * The connection type (actor or director) is determined by the shared person's role.
+     *
      * @param m1 The first movie
      * @param m2 The second movie
      * @return A Connection object if a valid connection exists, null otherwise
@@ -154,6 +180,8 @@ public class MovieDatabase {
 
     /**
      * Gets all movies of a specific genre.
+     * Returns an empty list if no movies are found for the given genre.
+     *
      * @param genre The genre to search for
      * @return List of movies in the specified genre
      */
@@ -163,6 +191,8 @@ public class MovieDatabase {
 
     /**
      * Gets all movies a person has been involved in.
+     * Returns an empty set if no movies are found for the given person.
+     *
      * @param personName The name of the person
      * @return Set of movies the person has worked on
      */
@@ -174,6 +204,9 @@ public class MovieDatabase {
 
     /**
      * Loads movie and credit data from CSV files.
+     * This method populates the database with movies and their associated information.
+     * It handles both movie metadata and cast/crew information.
+     *
      * @param moviesPath Path to the movies CSV file
      * @param creditsPath Path to the credits CSV file
      * @throws IOException If there's an error reading the files
@@ -217,6 +250,8 @@ public class MovieDatabase {
 
     /**
      * Parses genres from a JSON string in the movies CSV.
+     * Handles malformed JSON gracefully by returning an empty list.
+     *
      * @param json JSON string containing genre information
      * @return List of genre names
      */
@@ -240,6 +275,9 @@ public class MovieDatabase {
 
     /**
      * Parses people (cast or crew) from a JSON string in the credits CSV.
+     * Handles malformed JSON gracefully by returning an empty list.
+     * Updates the personIndex with the parsed information.
+     *
      * @param json JSON string containing cast or crew information
      * @param type Either "cast" or "crew" to indicate the type of people being parsed
      * @param movie The movie these people are associated with

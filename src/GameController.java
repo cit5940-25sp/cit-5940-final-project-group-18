@@ -3,16 +3,42 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Controls the game flow and manages the game state, including turn management, timer, and input processing.
+ * This class coordinates between the game state, movie database, and view components.
+ */
 public class GameController {
+    /** The current state of the game */
     private GameState gameState;
+    
+    /** The database containing all available movies */
     private MovieDatabase movieDB;
+    
+    /** The view component for displaying game information */
     private GameView view;
+    
+    /** Flag indicating whether the game is over */
     private boolean gameOver;
+    
+    /** Timer for managing turn duration */
     private Timer timer;
+    
+    /** Task that runs on timer ticks */
     private TimerTask timerTask;
+    
+    /** Atomic boolean flag to track if the timer is running */
     private AtomicBoolean isTimerRunning = new AtomicBoolean(false);
-    private final Object lockObject = new Object(); // Synchronization object
+    
+    /** Object used for synchronization of timer operations */
+    private final Object lockObject = new Object();
 
+    /**
+     * Constructs a new GameController with the specified game components.
+     *
+     * @param gameState The game state to manage
+     * @param movieDB The movie database to use
+     * @param view The view component for displaying game information
+     */
     public GameController(GameState gameState, MovieDatabase movieDB, GameView view) {
         this.gameState = gameState;
         this.movieDB = movieDB;
@@ -21,6 +47,10 @@ public class GameController {
         this.timer = new Timer(true); // Use daemon timer
     }
 
+    /**
+     * Starts a new game by initializing the game state and starting the timer.
+     * Resets the game over flag and timer, and displays the initial game state.
+     */
     public void startGame() {
         gameOver = false;
         gameState.setGameOver(false);
@@ -30,6 +60,10 @@ public class GameController {
         view.displayAutocompleteSuggestions(movieDB.getAutocompleteSuggestions("", 5));
     }
 
+    /**
+     * Starts or restarts the game timer.
+     * The timer counts down from 30 seconds and handles timeout conditions.
+     */
     private void startTimer() {
         // Cancel any existing timer task
         stopTimer();
@@ -80,6 +114,9 @@ public class GameController {
         timer.scheduleAtFixedRate(timerTask, 1000, 1000);
     }
 
+    /**
+     * Stops the current timer and cleans up timer resources.
+     */
     private void stopTimer() {
         isTimerRunning.set(false);
         if (timerTask != null) {
@@ -88,6 +125,12 @@ public class GameController {
         }
     }
 
+    /**
+     * Processes a player's input, validating the movie and updating the game state accordingly.
+     * Handles various conditions including invalid movies, invalid connections, and win conditions.
+     *
+     * @param input The movie title input by the player
+     */
     public void processInput(String input) {
         synchronized (lockObject) {
             // First check if game is already over
@@ -116,7 +159,7 @@ public class GameController {
                 return;
             }
 
-            // Valid move was made, stop the current timer
+            // Only stop timer and proceed with game logic if we have a valid move
             stopTimer();
 
             // Update view with new game state
@@ -142,6 +185,10 @@ public class GameController {
         }
     }
 
+    /**
+     * Ends the current player's turn and switches to the next player.
+     * Resets the timer and updates the game state.
+     */
     public void endTurn() {
         synchronized (lockObject) {
             if (gameOver || gameState.isGameOver()) {
@@ -163,6 +210,11 @@ public class GameController {
         }
     }
 
+    /**
+     * Checks if the game is over.
+     *
+     * @return true if the game is over, false otherwise
+     */
     public boolean isGameOver() {
         return gameOver || gameState.isGameOver();
     }
