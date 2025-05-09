@@ -67,7 +67,13 @@ public class MovieDatabase {
      * @return The Movie object if found, null otherwise
      */
     public Movie findMovie(String name) {
-        return movieNameIndex.get(name);
+        Movie movie = movieNameIndex.get(name);
+        if (movie != null) {
+            System.out.println("[DEBUG] Found movie: " + movie.getTitle());
+            System.out.println("[DEBUG] Cast size: " + movie.getCast().size());
+            System.out.println("[DEBUG] Crew size: " + movie.getCrew().size());
+        }
+        return movie;
     }
 
     /**
@@ -124,18 +130,25 @@ public class MovieDatabase {
      * @return A Connection object if a valid connection exists, null otherwise
      */
     public Connection validateConnection(Movie m1, Movie m2) {
+        System.out.println("[DEBUG] Validating connection between: " + m1.getTitle() + " and " + m2.getTitle());
+        
         // Check for shared actors
         for (Person actor : m1.getCast()) {
             if (m2.getCast().contains(actor)) {
+                System.out.println("[DEBUG] Found shared actor: " + actor.getName());
                 return new Connection(m1, m2, actor, "actor");
             }
         }
+        
         // Check for shared directors
         for (Person director : m1.getCrew()) {
             if (m2.getCrew().contains(director)) {
+                System.out.println("[DEBUG] Found shared director: " + director.getName());
                 return new Connection(m1, m2, director, "director");
             }
         }
+        
+        System.out.println("[DEBUG] No valid connection found between movies");
         return null;
     }
 
@@ -235,7 +248,6 @@ public class MovieDatabase {
     private List<Person> parsePeople(String json, String type, Movie movie) {
         List<Person> people = new ArrayList<>();
         if (json == null || json.isEmpty() || !json.trim().startsWith("[")) {
-            System.err.println("Empty or invalid JSON for " + type + ": " + json);
             return people;
         }
         // Convert CSV-style double double-quotes to single double-quote
@@ -250,15 +262,11 @@ public class MovieDatabase {
                     obj.optString("job", "");
                 
                 Person person = new Person(0, name, role);
-                
-                // Add movie to person's set of movies
                 personIndex.computeIfAbsent(name, k -> new HashSet<>()).add(movie);
-                
                 people.add(person);
             }
         } catch (Exception e) {
-            System.err.println("Error parsing JSON for " + type + ": " + e.getMessage());
-            System.err.println("JSON content: " + json);
+            System.err.println("Error parsing JSON for " + type);
         }
         return people;
     }

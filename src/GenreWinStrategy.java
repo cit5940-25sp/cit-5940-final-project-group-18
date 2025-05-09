@@ -19,6 +19,7 @@ public class GenreWinStrategy implements IWinStrategy {
     public void updateProgress(Movie movie) {
         if (movie.getGenres().contains(targetGenre)) {
             currentCount++;
+            System.out.println("[DEBUG] " + targetGenre + " movie found! Count: " + currentCount + "/" + requiredCount);
         }
     }
     
