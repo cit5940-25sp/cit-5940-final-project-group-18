@@ -24,6 +24,7 @@ public class GameView {
     private Terminal terminal;
     private Screen screen;
     private StringBuilder currentInput = new StringBuilder();
+    private StringBuilder currentInput2 = new StringBuilder();
     private List<String> suggestions = List.of();
     private int cursorPosition = 0;
     private boolean running = true;
@@ -296,5 +297,49 @@ public class GameView {
         }
         screen.close();
         terminal.close();
+    }
+
+    /**
+     * Gets input from the user for winning strategy.
+     * Displays a prompt for winning strategy input.
+     * Uses currentInput2 for input collection.
+     * @return The user's chosen winning strategy as a string.
+     */
+    public String getStrategyInput() {
+        currentInput2 = new StringBuilder();
+        try {
+            int row = 5; // Place the prompt near the top
+            printString(0, row, "┌─Please choose your strategy first: Genre/Actor/Director────┐");
+            row++;
+            printString(2, row, "> " + currentInput2.toString());
+            printString(0, row + 1, "└" + "─".repeat(60) + "┘");
+            screen.refresh();
+            while (true) {
+                KeyStroke keyStroke = terminal.readInput();
+                if (keyStroke != null) {
+                    switch (keyStroke.getKeyType()) {
+                        case Character:
+                            currentInput2.append(keyStroke.getCharacter());
+                            printString(2, row, "> " + currentInput2.toString());
+                            screen.refresh();
+                            break;
+                        case Backspace:
+                            if (currentInput2.length() > 0) {
+                                currentInput2.deleteCharAt(currentInput2.length() - 1);
+                                printString(2, row, "> " + currentInput2.toString() + "      ");
+                                screen.refresh();
+                            }
+                            break;
+                        case Enter:
+                            return currentInput2.toString();
+                        default:
+                            break;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 }

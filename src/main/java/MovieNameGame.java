@@ -3,7 +3,6 @@ import com.opencsv.exceptions.CsvValidationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * The main game class that orchestrates the movie connection game.
@@ -60,14 +59,25 @@ public class MovieNameGame {
         // Load movie database (update with actual CSV paths if needed)
         movieDB = new MovieDatabase("data/movies.csv", "data/credits.csv");
 
-        // Setup players with the same win strategy
+        // Initialize game state and view
+        view = new GameView();
+
+        // Now you can use view.getStrategyInput()
+        String strategyChoice = view.getStrategyInput().trim().toLowerCase();
+        IWinStrategy player1Strategy;
+        if(strategyChoice.equals("actor")) {
+            player1Strategy = new ActorWinStrategy("Tom Hanks", 5);
+        } else if(strategyChoice.equals("director")) {
+            player1Strategy = new DirectorWinStrategy("Steven Spielberg", 5);
+        } else {
+            player1Strategy = new GenreWinStrategy("Action", 5);
+        }
         List<Player> players = new ArrayList<>();
-        players.add(new Player("Player 1", new GenreWinStrategy("Action", 5)));
-        players.add(new Player("Player 2", new GenreWinStrategy("Action", 5)));
+        players.add(new Player("Player 1", player1Strategy));
+        players.add(new Player("Player 2", player1Strategy));
 
         // Initialize game state and view
         gameState = new GameState(players, movieDB);
-        view = new GameView();
 
         // Initialize controller
         controller = new GameController(gameState, movieDB, view);
