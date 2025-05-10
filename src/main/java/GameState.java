@@ -61,6 +61,12 @@ public class GameState {
             return false;
         }
 
+        Player currentPlayer = getCurrentPlayer();
+        if (currentPlayer.hasPlayedMovie(movie.getTitle())) {
+            // Player already played this movie
+            return false;
+        }
+
         Movie lastMovie = playedMovies.isEmpty() ? null : playedMovies.get(playedMovies.size() - 1);
         if (lastMovie != null) {
             Connection connection = movieDB.validateConnection(lastMovie, movie);
@@ -72,17 +78,15 @@ public class GameState {
         
         playedMovies.add(movie);
         currentMovie = movie;
-        
+        currentPlayer.addPlayedMovie(movie.getTitle());
         // Update the current player's progress before switching players
         currentPlayer.updateProgress(movie);
-        
         // Debug: Print player scores after each move
         System.out.println("\n[DEBUG] Current Scores:");
         for (Player player : players) {
             System.out.println("[DEBUG] " + player.getName() + ": " + player.getProgress() + "%");
         }
         System.out.println();
-        
         nextPlayer(); // Move to the next player
         roundCount++;
         return true;

@@ -1,4 +1,6 @@
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Represents a player in the movie connection game.
@@ -30,6 +32,8 @@ public class Player {
      * This value is calculated based on the win strategy and is capped at 100.
      */
     private int progress;
+
+    private Set<String> playedMovieTitles = new HashSet<>();
 
     /**
      * Constructs a new player with the specified name and win strategy.
@@ -122,5 +126,13 @@ public class Player {
      */
     public boolean hasWon(List<Movie> playedMovies) {
         return winStrategy.checkWinCondition(playedMovies);
+    }
+
+    public boolean hasPlayedMovie(String title) {
+        return playedMovieTitles.contains(title);
+    }
+
+    public void addPlayedMovie(String title) {
+        playedMovieTitles.add(title);
     }
 }
