@@ -1,5 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Represents the current state of the movie connection game.
@@ -29,6 +31,9 @@ public class GameState {
     
     /** List of connections that have been used between movies */
     private List<Connection> usedConnections = new ArrayList<>();
+    
+    /** Map to track how many times each specific connection has been used */
+    private Map<String, Integer> connectionUsageCount = new HashMap<>();
     
     /** Flag indicating whether the game is over */
     private boolean gameOver;
@@ -73,6 +78,18 @@ public class GameState {
             if (connection == null || !connection.isValid()) {
                 return false; // Invalid move
             }
+            
+            // Create a unique key for this connection based on person and role
+            String connectionKey = connection.getConnector().getName() + ":" + connection.getConnectionType();
+            
+            // Check if this specific connection has been used too many times
+            int usageCount = connectionUsageCount.getOrDefault(connectionKey, 0);
+            if (usageCount >= 3) {
+                return false; // This specific connection has been used too many times
+            }
+            
+            // Update connection usage count
+            connectionUsageCount.put(connectionKey, usageCount + 1);
             usedConnections.add(connection);
         }
         
@@ -243,5 +260,16 @@ public class GameState {
      */
     public MovieDatabase getMovieDatabase() {
         return movieDB;
+    }
+
+    /**
+     * Gets the number of times a specific connection has been used.
+     *
+     * @param connection The connection to check
+     * @return The number of times this connection has been used
+     */
+    public int getConnectionUsageCount(Connection connection) {
+        String connectionKey = connection.getConnector().getName() + ":" + connection.getConnectionType();
+        return connectionUsageCount.getOrDefault(connectionKey, 0);
     }
 }

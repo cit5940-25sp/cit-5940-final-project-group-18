@@ -149,9 +149,16 @@ public class GameController {
             if (!valid) {
                 Movie lastMovie = gameState.getPlayedMovies().get(gameState.getPlayedMovies().size() - 1);
                 Connection attemptedConnection = movieDB.validateConnection(lastMovie, movie);
-                String errorMessage = "Invalid connection! The movie must be connected to the previous one by actor or director.";
+                String errorMessage = "Invalid connection!";
                 if (attemptedConnection != null) {
                     errorMessage += String.format("\nAttempted connection: %s", attemptedConnection.getDescription());
+                    
+                    // Check if this specific connection has been used too many times
+                    int usageCount = gameState.getConnectionUsageCount(attemptedConnection);
+                    if (usageCount >= 3) {
+                        errorMessage += String.format("\nThis specific connection (%s) has been used %d times (maximum 3 times allowed).", 
+                            attemptedConnection.getDescription(), usageCount);
+                    }
                 }
                 
                 // Add current scores to the error message
