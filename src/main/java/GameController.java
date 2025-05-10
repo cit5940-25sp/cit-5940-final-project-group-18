@@ -4,31 +4,33 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Controls the game flow and manages the game state, including turn management, timer, and input processing.
- * This class coordinates between the game state, movie database, and view components.
+ * Controls the game flow and manages the game state, including turn management,
+ * timer, and input processing.
+ * This class coordinates between the game state, movie database, and view
+ * components.
  */
 public class GameController {
     /** The current state of the game */
     private GameState gameState;
-    
+
     /** The database containing all available movies */
     private MovieDatabase movieDB;
-    
+
     /** The view component for displaying game information */
     private GameView view;
-    
+
     /** Flag indicating whether the game is over */
     private boolean gameOver;
-    
+
     /** Timer for managing turn duration */
     private Timer timer;
-    
+
     /** Task that runs on timer ticks */
     private TimerTask timerTask;
-    
+
     /** Atomic boolean flag to track if the timer is running */
     private AtomicBoolean isTimerRunning = new AtomicBoolean(false);
-    
+
     /** Object used for synchronization of timer operations */
     private final Object lockObject = new Object();
 
@@ -36,8 +38,8 @@ public class GameController {
      * Constructs a new GameController with the specified game components.
      *
      * @param gameState The game state to manage
-     * @param movieDB The movie database to use
-     * @param view The view component for displaying game information
+     * @param movieDB   The movie database to use
+     * @param view      The view component for displaying game information
      */
     public GameController(GameState gameState, MovieDatabase movieDB, GameView view) {
         this.gameState = gameState;
@@ -71,7 +73,7 @@ public class GameController {
         // Set flag to indicate timer is running
         isTimerRunning.set(true);
 
-       timerTask = new TimerTask() {
+        timerTask = new TimerTask() {
             @Override
             public void run() {
                 if (!isTimerRunning.get()) {
@@ -79,30 +81,29 @@ public class GameController {
                 }
 
                 synchronized (lockObject) {
-                   // Decrease timer by 1 second
-                   int currentTime = gameState.getTimer();
-                   int newTime = currentTime - 1;
-                   gameState.setTimer(newTime);
+                    // Decrease timer by 1 second
+                    int currentTime = gameState.getTimer();
+                    int newTime = currentTime - 1;
+                    gameState.setTimer(newTime);
 
-                   // Check if time has run out
-                   if (newTime <= 0) {
-                       isTimerRunning.set(false);
+                    // Check if time has run out
+                    if (newTime <= 0) {
+                        isTimerRunning.set(false);
 
-                       // Handle timeout - determine winner
-                       Player currentPlayer = gameState.getCurrentPlayer();
-                       gameState.nextPlayer(); // Move to the next player
-                       Player winner = gameState.getCurrentPlayer(); // This is the winner
+                        // Handle timeout - current player loses
+                        Player currentPlayer = gameState.getCurrentPlayer();
+                        gameState.nextPlayer(); // Move to the next player
+                        Player winner = gameState.getCurrentPlayer(); // This is the winner
 
-                       // Set game over
-                       gameOver = true;
-                       gameState.setGameOver(true);
+                        // Set game over
+                        gameOver = true;
+                        gameState.setGameOver(true);
 
-                       // Announce the winner due to timeout using the view
-                       view.displayError(
-                               "Winner: " + winner.getName() + " (timeout by " + currentPlayer.getName() + ")");
+                        // Display game results with timeout flag set to true
+                        view.displayGameResults(winner, gameState.getPlayers(), true);
 
-                       // Cancel this timer task
-                       cancel();
+                        // Cancel this timer task
+                        cancel();
                     }
                 }
             }
@@ -111,7 +112,6 @@ public class GameController {
         // Schedule timer to run every second
         timer.scheduleAtFixedRate(timerTask, 1000, 1000);
     }
-
 
     /**
      * Stops the current timer and cleans up timer resources.
@@ -125,8 +125,10 @@ public class GameController {
     }
 
     /**
-     * Processes a player's input, validating the movie and updating the game state accordingly.
-     * Handles various conditions including invalid movies, invalid connections, and win conditions.
+     * Processes a player's input, validating the movie and updating the game state
+     * accordingly.
+     * Handles various conditions including invalid movies, invalid connections, and
+     * win conditions.
      *
      * @param input The movie title input by the player
      */
@@ -152,15 +154,16 @@ public class GameController {
                 String errorMessage = "Invalid connection!";
                 if (attemptedConnection != null) {
                     errorMessage += String.format("\nAttempted connection: %s", attemptedConnection.getDescription());
-                    
+
                     // Check if this specific connection has been used too many times
                     int usageCount = gameState.getConnectionUsageCount(attemptedConnection);
                     if (usageCount >= 3) {
-                        errorMessage += String.format("\nThis specific connection (%s) has been used %d times (maximum 3 times allowed).", 
-                            attemptedConnection.getDescription(), usageCount);
+                        errorMessage += String.format(
+                                "\nThis specific connection (%s) has been used %d times (maximum 3 times allowed).",
+                                attemptedConnection.getDescription(), usageCount);
                     }
                 }
-                
+
                 view.displayError(errorMessage);
                 return;
             }
@@ -176,8 +179,9 @@ public class GameController {
             if (winner != null) {
                 gameOver = true;
                 gameState.setGameOver(true);
-                // Use view.displayError instead of System.out.println for TUI display
-                view.displayError(winner.getName() + " has WON by achieving their win condition!");
+                // Display game results with timeout flag set to false (indicating win by
+                // condition)
+                view.displayGameResults(winner, gameState.getPlayers(), false);
                 return;
             }
 

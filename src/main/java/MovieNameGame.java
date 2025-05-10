@@ -23,13 +23,13 @@ import java.util.List;
 public class MovieNameGame {
     /** Controller that manages game logic and player input processing */
     private GameController controller;
-    
+
     /** View component responsible for displaying game state and messages */
     private GameView view;
-    
+
     /** Database containing all movie information and connection logic */
     private MovieDatabase movieDB;
-    
+
     /** Current state of the game, including players and played movies */
     private GameState gameState;
 
@@ -37,7 +37,8 @@ public class MovieNameGame {
      * Starts the game by initializing components and entering the game loop.
      * This is the main entry point for the game.
      *
-     * @throws IOException If there's an error reading the movie database files
+     * @throws IOException            If there's an error reading the movie database
+     *                                files
      * @throws CsvValidationException If there's an error parsing the CSV files
      */
     public void startGame() throws IOException, CsvValidationException {
@@ -52,7 +53,8 @@ public class MovieNameGame {
      * - Sets up the game state
      * - Initializes the view and controller
      *
-     * @throws IOException If there's an error reading the movie database files
+     * @throws IOException            If there's an error reading the movie database
+     *                                files
      * @throws CsvValidationException If there's an error parsing the CSV files
      */
     private void initializeComponents() throws IOException, CsvValidationException {
@@ -66,11 +68,11 @@ public class MovieNameGame {
         String strategyChoice = view.getStrategyInput().trim().toLowerCase();
         IWinStrategy player1Strategy;
         String target = null;
-        if(strategyChoice.equals("actor")) {
+        if (strategyChoice.equals("actor")) {
             target = movieDB.getRandomActor();
             player1Strategy = new ActorWinStrategy(target, 5);
             System.out.println("Your target actor is: " + target);
-        } else if(strategyChoice.equals("director")) {
+        } else if (strategyChoice.equals("director")) {
             target = movieDB.getRandomDirector();
             player1Strategy = new DirectorWinStrategy(target, 5);
             System.out.println("Your target director is: " + target);
@@ -108,26 +110,17 @@ public class MovieNameGame {
         while (true) {
             view.displayGameState(gameState);
             String input = view.getUserInput();
-            
+
             if (input == null) {
                 break; // User pressed Escape
             }
 
             // Process input and check game state
             controller.processInput(input);
-            
+
             if (gameState.isGameOver()) {
-                // Force one more state update to ensure the win message is displayed
-                view.displayGameState(gameState);
-
-                // Add a small delay to ensure the message is visible
-                try {
-                    Thread.sleep(5000); // Wait 5 seconds before exiting
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                break;
+                break; // Exit the game loop when game is over, displayGameResults already called by
+                       // controller
             }
         }
 
@@ -143,7 +136,8 @@ public class MovieNameGame {
      * Creates and starts a new game instance.
      *
      * @param args Command line arguments (not used)
-     * @throws IOException If there's an error reading the movie database files
+     * @throws IOException            If there's an error reading the movie database
+     *                                files
      * @throws CsvValidationException If there's an error parsing the CSV files
      */
     public static void main(String[] args) throws IOException, CsvValidationException {

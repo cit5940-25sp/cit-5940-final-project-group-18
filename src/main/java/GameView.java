@@ -7,6 +7,7 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
+import com.googlecode.lanterna.input.KeyType;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,31 +31,39 @@ public class GameView {
     private boolean running = true;
     private GameState gameState;
     private ScheduledExecutorService displayTimer;
-    private String currentError = null;  // Add this field to store the current error message
+    private String currentError = null; // Add this field to store the current error message
+    private boolean showingGameResults = false; // Flag to indicate we're showing game results
 
     /**
      * Constructs a new GameView and initializes the terminal screen.
+     * 
      * @throws IOException if there's an error initializing the terminal
      */
     public GameView() throws IOException {
         terminal = new DefaultTerminalFactory().createTerminal();
         screen = new TerminalScreen(terminal);
         screen.startScreen();
-        
+
         displayTimer = Executors.newSingleThreadScheduledExecutor();
         displayTimer.scheduleAtFixedRate(() -> {
-            if (gameState != null) {
-                try {
-                    displayGameState(gameState);
-                } catch (Exception e) {
-                    e.printStackTrace();
+            try {
+                if (showingGameResults) {
+                    // Skip normal game state display if showing results
+                    return;
                 }
+
+                if (gameState != null) {
+                    displayGameState(gameState);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }, 0, 100, TimeUnit.MILLISECONDS);
     }
 
     /**
      * Sets the game state to be displayed.
+     * 
      * @param gameState The game state to be displayed
      */
     public void setGameState(GameState gameState) {
@@ -68,12 +77,18 @@ public class GameView {
      * @param state The current state of the game to be displayed
      */
     public void displayGameState(GameState state) {
+        // Don't update game state if we're showing results
+        if (showingGameResults) {
+            return;
+        }
+
         try {
             screen.clear();
-            
+
             // Display timer and current player at the top with a border
             String header = String.format("Round: %d | Time: %ds | Current Player: %s",
-                    state.getRoundCount(), state.getTimer(), state.getCurrentPlayer().getName());            printString(0, 0, "╔" + "═".repeat(header.length() + 2) + "╗");
+                    state.getRoundCount(), state.getTimer(), state.getCurrentPlayer().getName());
+            printString(0, 0, "╔" + "═".repeat(header.length() + 2) + "╗");
             printString(0, 1, "║ " + header + " ║");
             printString(0, 2, "╚" + "═".repeat(header.length() + 2) + "╝");
 
@@ -97,7 +112,9 @@ public class GameView {
                     String year = String.format("%4d", movie.getYear());
                     String base = String.format("• %s (Year: %s, Genres: ", title, year);
                     int maxGenresLength = maxLineLength - base.length() - 1; // -1 for closing parenthesis
-                    String genresDisplay = genres.length() > maxGenresLength && maxGenresLength > 3 ? genres.substring(0, maxGenresLength - 3) + "..." : genres;
+                    String genresDisplay = genres.length() > maxGenresLength && maxGenresLength > 3
+                            ? genres.substring(0, maxGenresLength - 3) + "..."
+                            : genres;
                     String movieInfo = base + genresDisplay + ")";
                     printString(2, row++, movieInfo);
                     // Show connection to previous movie if it exists
@@ -118,7 +135,8 @@ public class GameView {
             printString(0, row++, "┌─ Player Status ──────────────────────────────┐");
 
             // Display win condition once (assuming all players have same win condition)
-            String winCondition = String.format("Win Condition: %s", state.getPlayers().get(0).getWinStrategy().getDescription());
+            String winCondition = String.format("Win Condition: %s",
+                    state.getPlayers().get(0).getWinStrategy().getDescription());
             printString(2, row++, "• " + winCondition);
 
             // Display each player's progress
@@ -182,9 +200,9 @@ public class GameView {
      * @param error The error message to display
      */
     public void displayError(String error) {
-        this.currentError = error;  // Store the error message
+        this.currentError = error; // Store the error message
         try {
-            displayGameState(gameState);  // Refresh the display with the new error
+            displayGameState(gameState); // Refresh the display with the new error
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -206,7 +224,7 @@ public class GameView {
                             handleCharacter(keyStroke.getCharacter());
                             // Update suggestions based on current input
                             List<String> newSuggestions = gameState.getMovieDatabase()
-                                .getAutocompleteSuggestions(currentInput.toString(), 5);
+                                    .getAutocompleteSuggestions(currentInput.toString(), 5);
                             displayAutocompleteSuggestions(newSuggestions);
                             displayGameState(gameState);
                             break;
@@ -214,7 +232,7 @@ public class GameView {
                             handleBackspace();
                             // Update suggestions after backspace too
                             newSuggestions = gameState.getMovieDatabase()
-                                .getAutocompleteSuggestions(currentInput.toString(), 5);
+                                    .getAutocompleteSuggestions(currentInput.toString(), 5);
                             displayAutocompleteSuggestions(newSuggestions);
                             displayGameState(gameState);
                             break;
@@ -250,6 +268,7 @@ public class GameView {
 
     /**
      * Handles character input from the user.
+     * 
      * @param c The character to handle
      */
     private void handleCharacter(char c) {
@@ -269,9 +288,10 @@ public class GameView {
 
     /**
      * Prints a string at the specified position on the screen.
+     * 
      * @param column The column to start printing at
-     * @param row The row to print on
-     * @param text The text to print
+     * @param row    The row to print on
+     * @param text   The text to print
      */
     private void printString(int column, int row, String text) {
         for (int i = 0; i < text.length(); i++) {
@@ -281,14 +301,15 @@ public class GameView {
                 c = '2'; // Replace squared with regular 2
             }
             screen.setCharacter(column + i, row,
-                TextCharacter.fromCharacter(c)[0]
-                    .withForegroundColor(TextColor.ANSI.WHITE)
-                    .withBackgroundColor(TextColor.ANSI.BLACK));
+                    TextCharacter.fromCharacter(c)[0]
+                            .withForegroundColor(TextColor.ANSI.WHITE)
+                            .withBackgroundColor(TextColor.ANSI.BLACK));
         }
     }
 
     /**
      * Closes the terminal and screen.
+     * 
      * @throws IOException if there's an error closing the terminal
      */
     public void close() throws IOException {
@@ -303,6 +324,7 @@ public class GameView {
      * Gets input from the user for winning strategy.
      * Displays a prompt for winning strategy input.
      * Uses currentInput2 for input collection.
+     * 
      * @return The user's chosen winning strategy as a string.
      */
     public String getStrategyInput() {
@@ -341,5 +363,78 @@ public class GameView {
             e.printStackTrace();
         }
         return "";
+    }
+
+    /**
+     * Displays the final game results showing who won and lost.
+     * Uses a dedicated display area similar to strategy selection.
+     * 
+     * @param winner    The winning player, or null if there's no winner
+     * @param players   List of all players to show their final status
+     * @param isTimeout True if the game ended due to timeout, false if it ended due
+     *                  to win condition
+     */
+    public void displayGameResults(Player winner, List<Player> players, boolean isTimeout) {
+        try {
+            // Set flag to indicate we're showing results
+            showingGameResults = true;
+
+            // Stop any refresh timer to avoid conflicts
+            if (displayTimer != null) {
+                displayTimer.shutdown();
+                displayTimer = null;
+            }
+
+            // Fully clear the screen and reset
+            screen.clear();
+            screen.refresh();
+
+            // Display a game over header
+            int row = 2;
+            printString(0, row++, "┌─ Game Over ─────────────────────────────────┐");
+
+            // Display the winner if there is one
+            if (winner != null) {
+                printString(2, row++, "• Winner: " + winner.getName());
+                if (isTimeout) {
+                    printString(2, row++, "• Victory by TIMEOUT - other player ran out of time");
+                } else {
+                    printString(2, row++, "• Victory by completing the win condition:");
+                    printString(2, row++, "  " + winner.getWinStrategy().getDescription());
+                }
+            } else {
+                printString(2, row++, "• No winner - Game ended in a draw");
+            }
+
+            // Display final scores for all players
+            row += 1;
+            printString(0, row++, "┌─ Final Scores ─────────────────────────────┐");
+            for (Player player : players) {
+                String status = String.format("%s: %d%%", player.getName(), player.getProgress());
+                printString(2, row++, "• " + status);
+            }
+            printString(0, row++, "└" + "─".repeat(45) + "┘");
+
+            // Display a prompt to press ESC to exit
+            row += 2;
+            printString(0, row, "Press ESC to exit...");
+
+            // Ensure the cursor is visible and in a good spot
+            screen.setCursorPosition(new TerminalPosition(row + 1, row + 1));
+            screen.refresh();
+
+            // Wait for ESC key
+            while (true) {
+                KeyStroke keyStroke = terminal.readInput();
+                if (keyStroke != null && keyStroke.getKeyType() == KeyType.Escape) {
+                    break;
+                }
+            }
+
+            // Reset the showingGameResults flag (though not really needed at this point)
+            showingGameResults = false;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
