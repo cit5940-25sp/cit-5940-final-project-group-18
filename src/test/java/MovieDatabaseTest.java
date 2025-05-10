@@ -224,9 +224,7 @@ public class MovieDatabaseTest {
         assertFalse("Should not be empty", nolanMovies.isEmpty());
         
         // Print out the movies for debugging
-        System.out.println("\nChristopher Nolan's movies:");
         for (Movie movie : nolanMovies) {
-            System.out.println("Movie: " + movie.getTitle());
             // Verify he's listed as a director in each movie
             boolean isDirector = movie.getCrew().stream()
                 .anyMatch(p -> p.getName().equals("Christopher Nolan") && 

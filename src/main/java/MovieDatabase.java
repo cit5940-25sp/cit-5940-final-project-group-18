@@ -327,7 +327,6 @@ public class MovieDatabase {
                 people.add(person);
             }
         } catch (Exception e) {
-            System.err.println("Error parsing JSON for " + type);
         }
         return people;
     }

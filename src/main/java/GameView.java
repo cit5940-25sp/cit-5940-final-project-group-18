@@ -165,18 +165,18 @@ public class GameView {
             // Display error message if there is one
             if (currentError != null) {
                 TerminalSize size = screen.getTerminalSize();
-                row = size.getRows() - 3;
+                row = size.getRows() - 5; // Increase space for error messages
                 printString(0, row, "┌─ Log ─────────────────────────────────────┐");
                 // Split error message into lines and display each line
                 String[] errorLines = currentError.split("\n");
-                for (int i = 0; i < errorLines.length; i++) {
+                for (int i = 0; i < Math.min(errorLines.length, 3); i++) { // Show up to 3 lines of error message
                     printString(2, row + 1 + i, "• " + errorLines[i]);
                 }
-                printString(0, row + errorLines.length + 1, "└" + "─".repeat(45) + "┘");
+                printString(0, row + Math.min(errorLines.length, 3) + 1, "└" + "─".repeat(45) + "┘");
             }
 
             // Set cursor position for input
-            screen.setCursorPosition(new TerminalPosition(cursorPosition + 2, row - suggestions.size() - 1));
+            screen.setCursorPosition(new TerminalPosition(cursorPosition + 4, row - suggestions.size() - 1));
             screen.refresh();
         } catch (IOException e) {
             e.printStackTrace();
@@ -201,6 +201,7 @@ public class GameView {
      */
     public void displayError(String error) {
         this.currentError = error; // Store the error message
+        System.out.println("ERROR LOG: " + error); // Debug log to console
         try {
             displayGameState(gameState); // Refresh the display with the new error
         } catch (Exception e) {
@@ -294,16 +295,34 @@ public class GameView {
      * @param text   The text to print
      */
     private void printString(int column, int row, String text) {
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            // Handle special characters
-            if (c == '²') {
-                c = '2'; // Replace squared with regular 2
+        try {
+            TerminalSize size = screen.getTerminalSize();
+            if (row >= size.getRows() || column >= size.getColumns()) {
+                return; // Skip if out of bounds
             }
-            screen.setCharacter(column + i, row,
-                    TextCharacter.fromCharacter(c)[0]
-                            .withForegroundColor(TextColor.ANSI.WHITE)
-                            .withBackgroundColor(TextColor.ANSI.BLACK));
+
+            // Limit text length to prevent going off screen
+            int maxLength = size.getColumns() - column;
+            String displayText = text.length() > maxLength ? text.substring(0, maxLength) : text;
+
+            for (int i = 0; i < displayText.length(); i++) {
+                if (column + i >= size.getColumns()) {
+                    break; // Prevent writing outside terminal bounds
+                }
+
+                char c = displayText.charAt(i);
+                // Handle special characters
+                if (c == '²') {
+                    c = '2'; // Replace squared with regular 2
+                }
+                screen.setCharacter(column + i, row,
+                        TextCharacter.fromCharacter(c)[0]
+                                .withForegroundColor(TextColor.ANSI.WHITE)
+                                .withBackgroundColor(TextColor.ANSI.BLACK));
+            }
+        } catch (Exception e) {
+            // Silently handle any unexpected rendering errors
+            System.err.println("Error in printString: " + e.getMessage());
         }
     }
 
