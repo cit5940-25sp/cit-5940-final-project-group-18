@@ -67,23 +67,27 @@ public class MovieNameGame {
         // Now you can use view.getStrategyInput()
         String strategyChoice = view.getStrategyInput().trim().toLowerCase();
         IWinStrategy player1Strategy;
+        IWinStrategy player2Strategy;
         String target = null;
         if (strategyChoice.equals("actor")) {
             target = movieDB.getRandomActor();
             player1Strategy = new ActorWinStrategy(target, 5);
+            player2Strategy = new ActorWinStrategy(target, 5);
             System.out.println("Your target actor is: " + target);
         } else if (strategyChoice.equals("director")) {
             target = movieDB.getRandomDirector();
             player1Strategy = new DirectorWinStrategy(target, 5);
+            player2Strategy = new DirectorWinStrategy(target, 5);
             System.out.println("Your target director is: " + target);
         } else {
             target = movieDB.getRandomGenre();
             player1Strategy = new GenreWinStrategy(target, 5);
+            player2Strategy = new GenreWinStrategy(target, 5);
             System.out.println("Your target genre is: " + target);
         }
         List<Player> players = new ArrayList<>();
         players.add(new Player("Player 1", player1Strategy));
-        players.add(new Player("Player 2", player1Strategy));
+        players.add(new Player("Player 2", player2Strategy));
 
         // Initialize game state and view
         gameState = new GameState(players, movieDB);
