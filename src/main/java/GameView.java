@@ -11,15 +11,13 @@ import com.googlecode.lanterna.input.KeyType;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Handles the display and user interface aspects of the movie connection game.
  * This class is responsible for rendering the game state, displaying messages,
  * and handling user input. It serves as the view component in the MVC pattern.
- * Uses Lanterna for terminal-based UI.
+ * Uses Lanterna for terminal-based UI with improved anti-flicker mechanisms.
  */
 public class GameView {
     private Terminal terminal;
@@ -30,12 +28,14 @@ public class GameView {
     private int cursorPosition = 0;
     private boolean running = true;
     private GameState gameState;
-    private ScheduledExecutorService displayTimer;
-    private String currentError = null; // Add this field to store the current error message
-    private boolean showingGameResults = false; // Flag to indicate we're showing game results
+    private String currentError = null;
+    private boolean showingGameResults = false;
+    private AtomicBoolean refreshRequested = new AtomicBoolean(false);
+    private Thread refreshThread;
 
     /**
      * Constructs a new GameView and initializes the terminal screen.
+     * Sets up a dedicated refresh thread to avoid screen flicker.
      * 
      * @throws IOException if there's an error initializing the terminal
      */
@@ -44,50 +44,60 @@ public class GameView {
         screen = new TerminalScreen(terminal);
         screen.startScreen();
 
-        displayTimer = Executors.newSingleThreadScheduledExecutor();
-        displayTimer.scheduleAtFixedRate(() -> {
-            try {
-                if (showingGameResults) {
-                    // Skip normal game state display if showing results
-                    return;
+        // Instead of a scheduled executor, use a dedicated refresh thread
+        refreshThread = new Thread(() -> {
+            while (running) {
+                try {
+                    // Only refresh when explicitly requested
+                    if (refreshRequested.get() && !showingGameResults && gameState != null) {
+                        renderScreen();
+                        refreshRequested.set(false);
+                    }
+                    Thread.sleep(20); // Short sleep to avoid CPU hogging
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-
-                if (gameState != null) {
-                    displayGameState(gameState);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        }, 0, 100, TimeUnit.MILLISECONDS);
+        });
+        refreshThread.setDaemon(true);
+        refreshThread.start();
     }
 
     /**
-     * Sets the game state to be displayed.
+     * Sets the game state to be displayed and requests a refresh.
      * 
      * @param gameState The game state to be displayed
      */
     public void setGameState(GameState gameState) {
         this.gameState = gameState;
+        requestRefresh();
     }
 
     /**
-     * Displays the current state of the game, including played movies,
-     * current player, and game progress.
-     *
-     * @param state The current state of the game to be displayed
+     * Requests a screen refresh when changes occur.
+     * The actual refresh will happen on the refresh thread.
      */
-    public void displayGameState(GameState state) {
-        // Don't update game state if we're showing results
-        if (showingGameResults) {
-            return;
-        }
+    private void requestRefresh() {
+        refreshRequested.set(true);
+    }
 
+    /**
+     * Renders the entire screen at once to prevent flickering.
+     * This is called only by the refresh thread.
+     */
+    private synchronized void renderScreen() {
         try {
             screen.clear();
 
+            // Only continue if we have a valid game state
+            if (gameState == null) {
+                screen.refresh();
+                return;
+            }
+
             // Display timer and current player at the top with a border
             String header = String.format("Round: %d | Time: %ds | Current Player: %s",
-                    state.getRoundCount(), state.getTimer(), state.getCurrentPlayer().getName());
+                    gameState.getRoundCount(), gameState.getTimer(), gameState.getCurrentPlayer().getName());
             printString(0, 0, "╔" + "═".repeat(header.length() + 2) + "╗");
             printString(0, 1, "║ " + header + " ║");
             printString(0, 2, "╚" + "═".repeat(header.length() + 2) + "╝");
@@ -95,7 +105,7 @@ public class GameView {
             // Display movie history with a section header
             int row = 4;
             printString(0, row++, "┌─ Movie History ──────────────────────────────┐");
-            List<Movie> movies = state.getPlayedMovies();
+            List<Movie> movies = gameState.getPlayedMovies();
             if (movies.isEmpty()) {
                 printString(2, row++, "No movies played yet");
             } else {
@@ -120,7 +130,7 @@ public class GameView {
                     // Show connection to previous movie if it exists
                     if (i > startIndex) {
                         Movie prevMovie = movies.get(i - 1);
-                        Connection connection = state.getMovieDatabase().validateConnection(prevMovie, movie);
+                        Connection connection = gameState.getMovieDatabase().validateConnection(prevMovie, movie);
                         if (connection != null && connection.isValid()) {
                             String connectionInfo = String.format("  ↳ Connected via: %s", connection.getDescription());
                             printString(2, row++, connectionInfo);
@@ -136,11 +146,11 @@ public class GameView {
 
             // Display win condition once (assuming all players have same win condition)
             String winCondition = String.format("Win Condition: %s",
-                    state.getPlayers().get(0).getWinStrategy().getDescription());
+                    gameState.getPlayers().get(0).getWinStrategy().getDescription());
             printString(2, row++, "• " + winCondition);
 
             // Display each player's progress
-            for (Player player : state.getPlayers()) {
+            for (Player player : gameState.getPlayers()) {
                 String status = String.format("%s: %d%%", player.getName(), player.getProgress());
                 printString(2, row++, "• " + status);
             }
@@ -151,6 +161,9 @@ public class GameView {
             printString(0, row, "┌─ Enter Movie Title ──────────────────────────┐");
             row += 1;
             printString(2, row, "> " + currentInput.toString());
+
+            // Track the input row position for cursor positioning later
+            int inputRow = row;
 
             // Display suggestions in a box
             if (!suggestions.isEmpty()) {
@@ -165,7 +178,7 @@ public class GameView {
             // Display error message if there is one
             if (currentError != null) {
                 TerminalSize size = screen.getTerminalSize();
-                row = size.getRows() - 5; // Increase space for error messages
+                row = size.getRows() - 5; // Position error at bottom of screen
                 printString(0, row, "┌─ Log ─────────────────────────────────────┐");
                 // Split error message into lines and display each line
                 String[] errorLines = currentError.split("\n");
@@ -176,11 +189,29 @@ public class GameView {
             }
 
             // Set cursor position for input
-            screen.setCursorPosition(new TerminalPosition(cursorPosition + 4, row - suggestions.size() - 1));
+            screen.setCursorPosition(new TerminalPosition(cursorPosition + 4, inputRow));
+
+            // Single refresh at the end
             screen.refresh();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Displays the current state of the game by requesting a refresh.
+     * This is a non-blocking call that just triggers the refresh thread.
+     *
+     * @param state The current state of the game to be displayed
+     */
+    public void displayGameState(GameState state) {
+        // Don't update game state if we're showing results
+        if (showingGameResults) {
+            return;
+        }
+
+        this.gameState = state;
+        requestRefresh();
     }
 
     /**
@@ -191,6 +222,7 @@ public class GameView {
      */
     public void displayAutocompleteSuggestions(List<String> suggestions) {
         this.suggestions = suggestions;
+        requestRefresh();
     }
 
     /**
@@ -202,11 +234,7 @@ public class GameView {
     public void displayError(String error) {
         this.currentError = error; // Store the error message
         System.out.println("ERROR LOG: " + error); // Debug log to console
-        try {
-            displayGameState(gameState); // Refresh the display with the new error
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        requestRefresh();
     }
 
     /**
@@ -220,22 +248,24 @@ public class GameView {
             while (running) {
                 KeyStroke keyStroke = terminal.readInput();
                 if (keyStroke != null) {
+                    boolean needsRefresh = false;
+
                     switch (keyStroke.getKeyType()) {
                         case Character:
                             handleCharacter(keyStroke.getCharacter());
                             // Update suggestions based on current input
                             List<String> newSuggestions = gameState.getMovieDatabase()
                                     .getAutocompleteSuggestions(currentInput.toString(), 5);
-                            displayAutocompleteSuggestions(newSuggestions);
-                            displayGameState(gameState);
+                            suggestions = newSuggestions;
+                            needsRefresh = true;
                             break;
                         case Backspace:
                             handleBackspace();
                             // Update suggestions after backspace too
                             newSuggestions = gameState.getMovieDatabase()
                                     .getAutocompleteSuggestions(currentInput.toString(), 5);
-                            displayAutocompleteSuggestions(newSuggestions);
-                            displayGameState(gameState);
+                            suggestions = newSuggestions;
+                            needsRefresh = true;
                             break;
                         case Enter:
                             String input = currentInput.toString();
@@ -249,22 +279,16 @@ public class GameView {
                         default:
                             break;
                     }
+
+                    if (needsRefresh) {
+                        requestRefresh();
+                    }
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
-    }
-
-    /**
-     * Updates the display of the game timer.
-     * This method updates the visual representation of the remaining time.
-     *
-     * @param seconds The number of seconds remaining in the current turn
-     */
-    public void updateTimer(int seconds) {
-        // Timer is now handled in displayGameState
     }
 
     /**
@@ -328,13 +352,21 @@ public class GameView {
 
     /**
      * Closes the terminal and screen.
+     * Cleanly stops the refresh thread.
      * 
      * @throws IOException if there's an error closing the terminal
      */
     public void close() throws IOException {
-        if (displayTimer != null) {
-            displayTimer.shutdown();
+        running = false;
+        try {
+            if (refreshThread != null && refreshThread.isAlive()) {
+                refreshThread.interrupt();
+                refreshThread.join(1000); // Wait up to 1 second for thread to terminate
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
+
         screen.close();
         terminal.close();
     }
@@ -349,25 +381,33 @@ public class GameView {
     public String getStrategyInput() {
         currentInput2 = new StringBuilder();
         try {
+            // Clear screen once at beginning
+            screen.clear();
+
             int row = 5; // Place the prompt near the top
             printString(0, row, "┌─Please choose your strategy first: Genre/Actor/Director────┐");
             row++;
             printString(2, row, "> " + currentInput2.toString());
             printString(0, row + 1, "└" + "─".repeat(60) + "┘");
             screen.refresh();
+
             while (true) {
                 KeyStroke keyStroke = terminal.readInput();
                 if (keyStroke != null) {
                     switch (keyStroke.getKeyType()) {
                         case Character:
                             currentInput2.append(keyStroke.getCharacter());
+                            // Clear the line before printing new content
+                            printString(2, row, "> " + " ".repeat(50));
                             printString(2, row, "> " + currentInput2.toString());
                             screen.refresh();
                             break;
                         case Backspace:
                             if (currentInput2.length() > 0) {
                                 currentInput2.deleteCharAt(currentInput2.length() - 1);
-                                printString(2, row, "> " + currentInput2.toString() + "      ");
+                                // Clear the line before printing new content
+                                printString(2, row, "> " + " ".repeat(50));
+                                printString(2, row, "> " + currentInput2.toString());
                                 screen.refresh();
                             }
                             break;
@@ -398,15 +438,8 @@ public class GameView {
             // Set flag to indicate we're showing results
             showingGameResults = true;
 
-            // Stop any refresh timer to avoid conflicts
-            if (displayTimer != null) {
-                displayTimer.shutdown();
-                displayTimer = null;
-            }
-
-            // Fully clear the screen and reset
+            // Clear screen once
             screen.clear();
-            screen.refresh();
 
             // Display a game over header
             int row = 2;
@@ -462,5 +495,6 @@ public class GameView {
      */
     public void clearError() {
         this.currentError = null;
+        requestRefresh();
     }
 }
