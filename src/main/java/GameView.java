@@ -32,6 +32,8 @@ public class GameView {
     private boolean showingGameResults = false;
     private AtomicBoolean refreshRequested = new AtomicBoolean(false);
     private Thread refreshThread;
+    private Thread timerRefreshThread;
+    private long lastTimerUpdate = 0;
 
     /**
      * Constructs a new GameView and initializes the terminal screen.
@@ -61,6 +63,26 @@ public class GameView {
         });
         refreshThread.setDaemon(true);
         refreshThread.start();
+
+        // Add a dedicated timer refresh thread
+        timerRefreshThread = new Thread(() -> {
+            while (running) {
+                try {
+                    if (gameState != null && !showingGameResults) {
+                        long currentTime = System.currentTimeMillis();
+                        if (currentTime - lastTimerUpdate >= 1000) { // Update every second
+                            updateTimerDisplay();
+                            lastTimerUpdate = currentTime;
+                        }
+                    }
+                    Thread.sleep(100); // Check every 100ms
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        timerRefreshThread.setDaemon(true);
+        timerRefreshThread.start();
     }
 
     /**
@@ -192,6 +214,33 @@ public class GameView {
             screen.setCursorPosition(new TerminalPosition(cursorPosition + 4, inputRow));
 
             // Single refresh at the end
+            screen.refresh();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Updates only the timer portion of the display.
+     * This is called by the timer refresh thread to update the timer without
+     * causing flickering in the rest of the UI.
+     */
+    private synchronized void updateTimerDisplay() {
+        try {
+            if (gameState == null) return;
+
+            // Get the current timer value
+            int timer = gameState.getTimer();
+            
+            // Calculate the position of the timer in the header
+            String header = String.format("Round: %d | Time: %ds | Current Player: %s",
+                    gameState.getRoundCount(), timer, gameState.getCurrentPlayer().getName());
+            
+            // Update only the timer portion of the header
+            printString(0, 0, "╔" + "═".repeat(header.length() + 2) + "╗");
+            printString(0, 1, "║ " + header + " ║");
+            printString(0, 2, "╚" + "═".repeat(header.length() + 2) + "╝");
+            
             screen.refresh();
         } catch (IOException e) {
             e.printStackTrace();

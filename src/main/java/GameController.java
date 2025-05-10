@@ -85,9 +85,6 @@ public class GameController {
                     int currentTime = gameState.getTimer();
                     int newTime = currentTime - 1;
                     gameState.setTimer(newTime);
-                    
-                    // Request view refresh to update timer display
-                    view.displayGameState(gameState);
 
                     // Check if time has run out
                     if (newTime <= 0) {
