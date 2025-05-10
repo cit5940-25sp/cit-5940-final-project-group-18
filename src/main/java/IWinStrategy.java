@@ -26,4 +26,13 @@ public interface IWinStrategy {
      * @param movie The movie that was just played
      */
     void updateProgress(Movie movie);
+
+    /**
+     * Gets a human-readable description of the win condition.
+     * This method should return a string that clearly explains what the player
+     * needs to do to win (e.g., "Play 3 Action movies" or "Play 2 movies with Tom Hanks").
+     *
+     * @return A string describing the win condition
+     */
+    String getDescription();
 }

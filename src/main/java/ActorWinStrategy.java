@@ -83,4 +83,9 @@ public class ActorWinStrategy implements IWinStrategy {
     public int getRequiredCount() {
         return requiredCount;
     }
+
+    @Override
+    public String getDescription() {
+        return String.format("Play %d movies with %s", requiredCount, targetActor);
+    }
 } 

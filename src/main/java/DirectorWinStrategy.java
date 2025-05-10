@@ -83,4 +83,16 @@ public class DirectorWinStrategy implements IWinStrategy {
     public int getRequiredCount() {
         return requiredCount;
     }
+
+    /**
+     * Gets a human-readable description of the win condition.
+     * This method should return a string that clearly explains what the player
+     * needs to do to win (e.g., "Play 3 Action movies" or "Play 2 movies with Tom Hanks").
+     *
+     * @return A string describing the win condition
+     */
+    @Override
+    public String getDescription() {
+        return String.format("Play %d movies directed by %s", requiredCount, targetDirector);
+    }
 } 

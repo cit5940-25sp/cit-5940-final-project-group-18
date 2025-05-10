@@ -147,14 +147,20 @@ public class GameController {
 
             boolean valid = gameState.makeMove(movie);
             if (!valid) {
-                view.displayError(
-                        "Invalid connection! The movie must be connected to the previous one by actor or director.");
-                // Show scores even for invalid moves
-                System.out.println("\nCurrent Scores:");
-                for (Player player : gameState.getPlayers()) {
-                    System.out.println(player.getName() + ": " + player.getProgress() + "%");
+                Movie lastMovie = gameState.getPlayedMovies().get(gameState.getPlayedMovies().size() - 1);
+                Connection attemptedConnection = movieDB.validateConnection(lastMovie, movie);
+                String errorMessage = "Invalid connection! The movie must be connected to the previous one by actor or director.";
+                if (attemptedConnection != null) {
+                    errorMessage += String.format("\nAttempted connection: %s", attemptedConnection.getDescription());
                 }
-                System.out.println();
+                
+                // Add current scores to the error message
+                errorMessage += "\n\nCurrent Scores:";
+                for (Player player : gameState.getPlayers()) {
+                    errorMessage += String.format("\n%s: %d%%", player.getName(), player.getProgress());
+                }
+                
+                view.displayError(errorMessage);
                 return;
             }
 

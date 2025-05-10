@@ -76,4 +76,9 @@ public class GenreWinStrategy implements IWinStrategy {
     public int getRequiredCount() {
         return requiredCount;
     }
+
+    @Override
+    public String getDescription() {
+        return String.format("Play %d %s movies", requiredCount, targetGenre);
+    }
 }
