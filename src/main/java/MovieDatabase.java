@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import java.util.stream.Collectors;
+import java.util.Random;
 
 /**
  * Manages a collection of movies and provides functionality for searching, autocomplete,
@@ -340,6 +341,74 @@ public class MovieDatabase {
             System.err.println("Error parsing JSON for " + type);
         }
         return people;
+    }
+
+    /**
+     * Gets a random genre from the database.
+     * @return A random genre, or null if none exist
+     */
+    public String getRandomGenre() {
+        List<String> genres = getAllGenres();
+        if (genres.isEmpty()) return null;
+        return genres.get(new java.util.Random().nextInt(genres.size()));
+    }
+
+    /**
+     * Gets a random actor from the database.
+     * @return A random actor name, or null if none exist
+     */
+    public String getRandomActor() {
+        List<String> actors = getAllActors();
+        if (actors.isEmpty()) return null;
+        return actors.get(new java.util.Random().nextInt(actors.size()));
+    }
+
+    /**
+     * Gets a random director from the database.
+     * @return A random director name, or null if none exist
+     */
+    public String getRandomDirector() {
+        List<String> directors = getAllDirectors();
+        if (directors.isEmpty()) return null;
+        return directors.get(new java.util.Random().nextInt(directors.size()));
+    }
+
+    /**
+     * Gets all unique genres in the database.
+     * @return List of all unique genres
+     */
+    public List<String> getAllGenres() {
+        return new ArrayList<>(genreIndex.keySet());
+    }
+
+    /**
+     * Gets all unique actor names in the database.
+     * @return List of all unique actor names
+     */
+    public List<String> getAllActors() {
+        Set<String> actors = new HashSet<>();
+        for (Movie movie : getAllMovies()) {
+            for (Person person : movie.getCast()) {
+                actors.add(person.getName());
+            }
+        }
+        return new ArrayList<>(actors);
+    }
+
+    /**
+     * Gets all unique director names in the database.
+     * @return List of all unique director names
+     */
+    public List<String> getAllDirectors() {
+        Set<String> directors = new HashSet<>();
+        for (Movie movie : getAllMovies()) {
+            for (Person person : movie.getCrew()) {
+                if (person.getRole().equalsIgnoreCase("director")) {
+                    directors.add(person.getName());
+                }
+            }
+        }
+        return new ArrayList<>(directors);
     }
 
     // Add this new method
