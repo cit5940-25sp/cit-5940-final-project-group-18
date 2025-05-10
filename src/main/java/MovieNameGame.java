@@ -3,7 +3,6 @@ import com.opencsv.exceptions.CsvValidationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * The main game class that orchestrates the movie connection game.
@@ -60,14 +59,32 @@ public class MovieNameGame {
         // Load movie database (update with actual CSV paths if needed)
         movieDB = new MovieDatabase("data/movies.csv", "data/credits.csv");
 
-        // Setup players with the same win strategy
+        // Initialize game state and view
+        view = new GameView();
+
+        // Now you can use view.getStrategyInput()
+        String strategyChoice = view.getStrategyInput().trim().toLowerCase();
+        IWinStrategy player1Strategy;
+        String target = null;
+        if(strategyChoice.equals("actor")) {
+            target = movieDB.getRandomActor();
+            player1Strategy = new ActorWinStrategy(target, 5);
+            System.out.println("Your target actor is: " + target);
+        } else if(strategyChoice.equals("director")) {
+            target = movieDB.getRandomDirector();
+            player1Strategy = new DirectorWinStrategy(target, 5);
+            System.out.println("Your target director is: " + target);
+        } else {
+            target = movieDB.getRandomGenre();
+            player1Strategy = new GenreWinStrategy(target, 5);
+            System.out.println("Your target genre is: " + target);
+        }
         List<Player> players = new ArrayList<>();
-        players.add(new Player("Player 1", new DirectorWinStrategy("Christopher Nolan", 5)));
-        players.add(new Player("Player 2", new DirectorWinStrategy("Christopher Nolan", 5)));
+        players.add(new Player("Player 1", player1Strategy));
+        players.add(new Player("Player 2", player1Strategy));
 
         // Initialize game state and view
         gameState = new GameState(players, movieDB);
-        view = new GameView();
 
         // Initialize controller
         controller = new GameController(gameState, movieDB, view);
