@@ -69,20 +69,21 @@ public class MovieNameGame {
         IWinStrategy player1Strategy;
         IWinStrategy player2Strategy;
         String target = null;
+        int requiredCount = 5;
         if (strategyChoice.equals("actor")) {
             target = movieDB.getRandomActor();
-            player1Strategy = new ActorWinStrategy(target, 5);
-            player2Strategy = new ActorWinStrategy(target, 5);
+            player1Strategy = new ActorWinStrategy(target, requiredCount);
+            player2Strategy = new ActorWinStrategy(target, requiredCount);
             System.out.println("Your target actor is: " + target);
         } else if (strategyChoice.equals("director")) {
             target = movieDB.getRandomDirector();
-            player1Strategy = new DirectorWinStrategy(target, 5);
-            player2Strategy = new DirectorWinStrategy(target, 5);
+            player1Strategy = new DirectorWinStrategy(target, requiredCount);
+            player2Strategy = new DirectorWinStrategy(target, requiredCount);
             System.out.println("Your target director is: " + target);
         } else {
             target = movieDB.getRandomGenre();
-            player1Strategy = new GenreWinStrategy(target, 5);
-            player2Strategy = new GenreWinStrategy(target, 5);
+            player1Strategy = new GenreWinStrategy(target, requiredCount);
+            player2Strategy = new GenreWinStrategy(target, requiredCount);
             System.out.println("Your target genre is: " + target);
         }
         List<Player> players = new ArrayList<>();
