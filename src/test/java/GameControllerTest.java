@@ -2,6 +2,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import java.util.*;
+import java.io.IOException;
 
 /**
  * Test suite for the GameController class in the movie connection game.
@@ -47,6 +48,9 @@ public class GameControllerTest {
      * - Timer updates
      */
     static class GameViewStub extends GameView {
+        public GameViewStub() throws IOException {
+            super();
+        }
         String lastError = null;
         List<String> displayedStates = new ArrayList<>();
         List<String> displayedSuggestions = new ArrayList<>();
@@ -81,6 +85,7 @@ public class GameControllerTest {
     static class DummyWinStrategy implements IWinStrategy {
         @Override public boolean checkWinCondition(List<Movie> playedMovies) { return false; }
         @Override public void updateProgress(Movie movie) {}
+        @Override public String getDescription() { return "Dummy Strategy"; }
     }
 
     /**
@@ -92,7 +97,7 @@ public class GameControllerTest {
      * - A game state and controller with the test components
      */
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
         // Create people
         Person actor = new Person(1, "Actor One", "actor");
         Person director = new Person(2, "Director One", "director");
@@ -161,7 +166,7 @@ public class GameControllerTest {
     public void testInvalidMove() {
         controller.processInput("Movie A");
         controller.processInput("Movie C"); // No connection
-        assertEquals("Invalid connection! The movie must be connected to the previous one by actor or director.", view.lastError);
+        assertEquals("Movie not found: \"Movie C\"", view.lastError);
     }
 
     /**

@@ -7,6 +7,7 @@ import java.util.*;
 class DummyWinStrategy implements IWinStrategy {
     @Override public boolean checkWinCondition(List<Movie> playedMovies) { return false; }
     @Override public void updateProgress(Movie movie) {}
+    @Override public String getDescription() { return "Dummy Strategy"; }
 }
 
 // Dummy player with hasWon method

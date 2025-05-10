@@ -161,12 +161,6 @@ public class GameController {
                     }
                 }
                 
-                // Add current scores to the error message
-                errorMessage += "\n\nCurrent Scores:";
-                for (Player player : gameState.getPlayers()) {
-                    errorMessage += String.format("\n%s: %d%%", player.getName(), player.getProgress());
-                }
-                
                 view.displayError(errorMessage);
                 return;
             }

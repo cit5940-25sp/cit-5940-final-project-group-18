@@ -67,7 +67,10 @@ public class MovieDatabase {
      */
     public void addMovie(Movie movie) {
         movieNameIndex.put(movie.getTitle(), movie);
-        movieTrie.insert(movie.getTitle());
+        // Only add to trie if it has valid data
+        if (hasValidData(movie)) {
+            movieTrie.insert(movie.getTitle());
+        }
         
         // Add movie to genre index for each of its genres
         for (String genre : movie.getGenres()) {
@@ -88,6 +91,12 @@ public class MovieDatabase {
             System.out.println("[DEBUG] Found movie: " + movie.getTitle());
             System.out.println("[DEBUG] Cast size: " + movie.getCast().size());
             System.out.println("[DEBUG] Crew size: " + movie.getCrew().size());
+            
+            // Only return the movie if it has valid data
+            if (!hasValidData(movie)) {
+                System.out.println("[DEBUG] Skipping movie due to missing cast/crew data: " + movie.getTitle());
+                return null;
+            }
         }
         return movie;
     }
@@ -99,7 +108,9 @@ public class MovieDatabase {
      * @return List of all Movie objects in the database
      */
     public List<Movie> getAllMovies() {
-        return new ArrayList<>(movieNameIndex.values());
+        return movieNameIndex.values().stream()
+            .filter(movie -> !movie.getCast().isEmpty() && !movie.getCrew().isEmpty())
+            .collect(Collectors.toList());
     }
 
     // ==================== SEARCH AND AUTOCOMPLETE ====================
@@ -214,6 +225,8 @@ public class MovieDatabase {
      */
     public void loadFromCSV(String moviesPath, String creditsPath) throws IOException, CsvValidationException {
         Map<Integer, Movie> idToMovie = new HashMap<>();
+        
+        // First load all movies without adding to trie
         try (CSVReader reader = new CSVReader(new FileReader(moviesPath))) {
             String[] fields;
             reader.readNext(); // skip header
@@ -223,16 +236,16 @@ public class MovieDatabase {
                 List<String> genres = parseGenres(fields[1]);
                 Movie movie = new Movie(id, title, 0, genres, new ArrayList<>(), new ArrayList<>());
                 idToMovie.put(id, movie);
-                addMovie(movie);
+                movieNameIndex.put(title, movie);  // Add to name index but not trie yet
+                addMovie(movie);  // Add to genre index
             }
         }
 
-        // Load credits (cast and crew) using OpenCSV
+        // Then load credits and add to trie only if movie has cast/crew
         try (CSVReader reader = new CSVReader(new FileReader(creditsPath))) {
             String[] fields;
             reader.readNext(); // skip header
             while ((fields = reader.readNext()) != null) {
-                // Skip lines that don't have at least 4 columns
                 if (fields.length < 4) {
                     System.err.println("Skipping malformed credits row (insufficient columns): " + Arrays.toString(fields));
                     continue;
@@ -240,10 +253,16 @@ public class MovieDatabase {
                 int movieId = Integer.parseInt(fields[0]);
                 Movie movie = idToMovie.get(movieId);
                 if (movie == null) continue;
+                
                 List<Person> cast = parsePeople(fields[2], "cast", movie);
                 List<Person> crew = parsePeople(fields[3], "crew", movie);
                 movie.getCast().addAll(cast);
                 movie.getCrew().addAll(crew);
+                
+                // Only add to trie if movie has cast and crew
+                if (!movie.getCast().isEmpty() && !movie.getCrew().isEmpty()) {
+                    movieTrie.insert(movie.getTitle());
+                }
             }
         }
     }
@@ -300,12 +319,22 @@ public class MovieDatabase {
                     obj.optString("job", "");
                 
                 Person person = new Person(0, name, role);
-                personIndex.computeIfAbsent(name, k -> new HashSet<>()).add(movie);
+                
+                // Only add to personIndex if it's a cast member or a director
+                if (type.equals("cast") || (type.equals("crew") && role.equalsIgnoreCase("Director"))) {
+                    personIndex.computeIfAbsent(name, k -> new HashSet<>()).add(movie);
+                }
+                
                 people.add(person);
             }
         } catch (Exception e) {
             System.err.println("Error parsing JSON for " + type);
         }
         return people;
+    }
+
+    // Add this new method
+    private boolean hasValidData(Movie movie) {
+        return movie != null && !movie.getCast().isEmpty() && !movie.getCrew().isEmpty();
     }
 }

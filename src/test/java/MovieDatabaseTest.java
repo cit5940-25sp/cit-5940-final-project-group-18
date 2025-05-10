@@ -205,4 +205,39 @@ public class MovieDatabaseTest {
         // Test loading with invalid file paths
         new MovieDatabase("nonexistent.csv", "nonexistent.csv");
     }
+
+    /**
+     * Tests parsing of director data from credits CSV.
+     * Specifically checks Christopher Nolan's entries to verify director parsing.
+     * Verifies:
+     * - Nolan is found in the database
+     * - His movies are correctly indexed
+     * - He is properly identified as a director
+     */
+    @Test
+    public void testDirectorParsing() {
+        // Get all movies associated with Christopher Nolan
+        Set<Movie> nolanMovies = db.getMoviesByPerson("Christopher Nolan");
+        
+        // Verify we found some movies
+        assertNotNull("Should return a set of movies", nolanMovies);
+        assertFalse("Should not be empty", nolanMovies.isEmpty());
+        
+        // Print out the movies for debugging
+        System.out.println("\nChristopher Nolan's movies:");
+        for (Movie movie : nolanMovies) {
+            System.out.println("Movie: " + movie.getTitle());
+            // Verify he's listed as a director in each movie
+            boolean isDirector = movie.getCrew().stream()
+                .anyMatch(p -> p.getName().equals("Christopher Nolan") && 
+                             p.getRole().equalsIgnoreCase("Director"));
+            assertTrue("Nolan should be listed as director in " + movie.getTitle(), isDirector);
+        }
+        
+        // Verify some known Nolan movies are present
+        assertTrue("Should contain The Dark Knight", 
+            nolanMovies.stream().anyMatch(m -> m.getTitle().equals("The Dark Knight")));
+        assertTrue("Should contain Inception", 
+            nolanMovies.stream().anyMatch(m -> m.getTitle().equals("Inception")));
+    }
 }

@@ -62,8 +62,8 @@ public class MovieNameGame {
 
         // Setup players with the same win strategy
         List<Player> players = new ArrayList<>();
-        players.add(new Player("Player 1", new GenreWinStrategy("Action", 5)));
-        players.add(new Player("Player 2", new GenreWinStrategy("Action", 5)));
+        players.add(new Player("Player 1", new DirectorWinStrategy("Christopher Nolan", 5)));
+        players.add(new Player("Player 2", new DirectorWinStrategy("Christopher Nolan", 5)));
 
         // Initialize game state and view
         gameState = new GameState(players, movieDB);
