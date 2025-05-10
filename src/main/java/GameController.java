@@ -175,6 +175,7 @@ public class GameController {
 
             // Update view with new game state
             view.displayGameState(gameState);
+            view.clearError(); // Flush the error log each round
 
             // Check for win condition
             Player winner = gameState.checkWinCondition();

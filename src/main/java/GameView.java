@@ -456,4 +456,11 @@ public class GameView {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Clears the current error log.
+     */
+    public void clearError() {
+        this.currentError = null;
+    }
 }
