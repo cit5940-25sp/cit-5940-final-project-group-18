@@ -62,7 +62,6 @@ public class MovieNameGame {
 
         // Setup players with the same win strategy
         List<Player> players = new ArrayList<>();
-        // Both players need to play 3 Action movies to win
         players.add(new Player("Player 1", new GenreWinStrategy("Action", 3)));
         players.add(new Player("Player 2", new GenreWinStrategy("Action", 3)));
 
@@ -86,66 +85,40 @@ public class MovieNameGame {
      * the game state and timer.
      */
     private void gameLoop() {
-        Scanner scanner = new Scanner(System.in);
         controller.startGame();
+        view.setGameState(gameState);
 
         while (true) {
             view.displayGameState(gameState);
-            System.out.print("Enter movie title: ");
-            String input = scanner.nextLine();
+            String input = view.getUserInput();
             
-            // Debug: Print the input
-            System.out.println("[DEBUG] Input received: " + input);
-            
-            // Debug: Print current game state before processing
-            System.out.println("[DEBUG] Current player: " + gameState.getCurrentPlayer().getName());
-            System.out.println("[DEBUG] Number of movies played: " + gameState.getPlayedMovies().size());
-            if (!gameState.getPlayedMovies().isEmpty()) {
-                System.out.println("[DEBUG] Last movie played: " + gameState.getPlayedMovies().get(gameState.getPlayedMovies().size() - 1).getTitle());
+            if (input == null) {
+                break; // User pressed Escape
             }
 
-            // Keep asking for input until we get a valid movie or game is over
-            while (!gameState.isGameOver()) {
-                // Store the current number of movies before processing
-                int moviesBefore = gameState.getPlayedMovies().size();
-                System.out.println("[DEBUG] Movies before processing: " + moviesBefore);
-                
-                controller.processInput(input);
-                
-                // If the game is over after processing, break out
-                if (gameState.isGameOver()) {
-                    System.out.println("[DEBUG] Game over detected, breaking reprompt loop");
-                    break;
-                }
-                
-                // If the number of movies hasn't changed, the input was invalid
-                // and we need to reprompt
-                if (gameState.getPlayedMovies().size() == moviesBefore) {
-                    System.out.println("[DEBUG] Invalid input detected - Movies after processing: " + gameState.getPlayedMovies().size());
-                    System.out.println("[DEBUG] Reprompting for new input...");
-                    System.out.print("Enter movie title: ");
-                    input = scanner.nextLine();
-                    System.out.println("[DEBUG] New input received: " + input);
-                } else {
-                    // Valid move was made, break out of the reprompt loop
-                    System.out.println("[DEBUG] Valid move detected - Movies after processing: " + gameState.getPlayedMovies().size());
-                    System.out.println("[DEBUG] Breaking reprompt loop");
-                    break;
-                }
-            }
+            // Process input and check game state
+            controller.processInput(input);
+            
+            if (gameState.isGameOver()) {
+                // Force one more state update to ensure the win message is displayed
+                view.displayGameState(gameState);
 
-            // Debug: Print game state after processing
-            System.out.println("[DEBUG] After processing - Number of movies: " + gameState.getPlayedMovies().size());
-            System.out.println("[DEBUG] Game over status: " + gameState.isGameOver());
+                // Add a small delay to ensure the message is visible
+                try {
+                    Thread.sleep(5000); // Wait 5 seconds before exiting
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
 
-            // Check for win condition
-            Player winner = gameState.checkWinCondition();
-            if (winner != null) {
-                System.out.println("Winner: " + winner.getName());
                 break;
             }
         }
-        scanner.close();
+
+        try {
+            view.close(); // Clean up the terminal
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

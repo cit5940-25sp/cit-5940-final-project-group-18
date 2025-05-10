@@ -71,7 +71,7 @@ public class GameController {
         // Set flag to indicate timer is running
         isTimerRunning.set(true);
 
-        timerTask = new TimerTask() {
+       timerTask = new TimerTask() {
             @Override
             public void run() {
                 if (!isTimerRunning.get()) {
@@ -79,32 +79,30 @@ public class GameController {
                 }
 
                 synchronized (lockObject) {
-                    // Decrease timer by 1 second
-                    int currentTime = gameState.getTimer();
-                    int newTime = currentTime - 1;
-                    gameState.setTimer(newTime);
+                   // Decrease timer by 1 second
+                   int currentTime = gameState.getTimer();
+                   int newTime = currentTime - 1;
+                   gameState.setTimer(newTime);
 
-                    // Check if time has run out
-                    if (newTime <= 0) {
-                        isTimerRunning.set(false);
+                   // Check if time has run out
+                   if (newTime <= 0) {
+                       isTimerRunning.set(false);
 
-                        // Handle timeout - determine winner
-                        Player currentPlayer = gameState.getCurrentPlayer();
-                        gameState.nextPlayer(); // Move to the next player
-                        Player winner = gameState.getCurrentPlayer(); // This is the winner
+                       // Handle timeout - determine winner
+                       Player currentPlayer = gameState.getCurrentPlayer();
+                       gameState.nextPlayer(); // Move to the next player
+                       Player winner = gameState.getCurrentPlayer(); // This is the winner
 
-                        // Set game over
-                        gameOver = true;
-                        gameState.setGameOver(true);
+                       // Set game over
+                       gameOver = true;
+                       gameState.setGameOver(true);
 
-                        // Announce the winner due to timeout
-                        System.out.println("\n==== TIME'S UP! ====");
-                        System.out.println(winner.getName() + " has WON because " +
-                                currentPlayer.getName() + " ran out of time!");
-                        System.out.println("===================\n");
+                       // Announce the winner due to timeout using the view
+                       view.displayError(
+                               "Winner: " + winner.getName() + " (timeout by " + currentPlayer.getName() + ")");
 
-                        // Cancel this timer task
-                        cancel();
+                       // Cancel this timer task
+                       cancel();
                     }
                 }
             }
@@ -113,6 +111,7 @@ public class GameController {
         // Schedule timer to run every second
         timer.scheduleAtFixedRate(timerTask, 1000, 1000);
     }
+
 
     /**
      * Stops the current timer and cleans up timer resources.
@@ -170,9 +169,8 @@ public class GameController {
             if (winner != null) {
                 gameOver = true;
                 gameState.setGameOver(true);
-                System.out.println("\n==== GAME OVER ====");
-                System.out.println(winner.getName() + " has WON by achieving their win condition!");
-                System.out.println("===================\n");
+                // Use view.displayError instead of System.out.println for TUI display
+                view.displayError(winner.getName() + " has WON by achieving their win condition!");
                 return;
             }
 
