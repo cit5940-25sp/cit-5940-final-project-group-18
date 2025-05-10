@@ -89,13 +89,8 @@ public class MovieDatabase {
     public Movie findMovie(String name) {
         Movie movie = movieNameIndex.get(name);
         if (movie != null) {
-            System.out.println("[DEBUG] Found movie: " + movie.getTitle());
-            System.out.println("[DEBUG] Cast size: " + movie.getCast().size());
-            System.out.println("[DEBUG] Crew size: " + movie.getCrew().size());
-            
             // Only return the movie if it has valid data
             if (!hasValidData(movie)) {
-                System.out.println("[DEBUG] Skipping movie due to missing cast/crew data: " + movie.getTitle());
                 return null;
             }
         }
@@ -168,12 +163,9 @@ public class MovieDatabase {
      * @return A Connection object if a valid connection exists, null otherwise
      */
     public Connection validateConnection(Movie m1, Movie m2) {
-        System.out.println("[DEBUG] Validating connection between: " + m1.getTitle() + " and " + m2.getTitle());
-        
         // Check for shared actors
         for (Person actor : m1.getCast()) {
             if (m2.getCast().contains(actor)) {
-                System.out.println("[DEBUG] Found shared actor: " + actor.getName());
                 return new Connection(m1, m2, actor, "actor");
             }
         }
@@ -181,12 +173,10 @@ public class MovieDatabase {
         // Check for shared directors
         for (Person director : m1.getCrew()) {
             if (m2.getCrew().contains(director)) {
-                System.out.println("[DEBUG] Found shared director: " + director.getName());
                 return new Connection(m1, m2, director, "director");
             }
         }
         
-        System.out.println("[DEBUG] No valid connection found between movies");
         return null;
     }
 
@@ -257,7 +247,6 @@ public class MovieDatabase {
             reader.readNext(); // skip header
             while ((fields = reader.readNext()) != null) {
                 if (fields.length < 4) {
-                    System.err.println("Skipping malformed credits row (insufficient columns): " + Arrays.toString(fields));
                     continue;
                 }
                 int movieId = Integer.parseInt(fields[0]);

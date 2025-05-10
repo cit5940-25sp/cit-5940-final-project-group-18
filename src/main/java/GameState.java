@@ -98,12 +98,6 @@ public class GameState {
         currentPlayer.addPlayedMovie(movie.getTitle());
         // Update the current player's progress before switching players
         currentPlayer.updateProgress(movie);
-        // Debug: Print player scores after each move
-        System.out.println("\n[DEBUG] Current Scores:");
-        for (Player player : players) {
-            System.out.println("[DEBUG] " + player.getName() + ": " + player.getProgress() + "%");
-        }
-        System.out.println();
         nextPlayer(); // Move to the next player
         roundCount++;
         return true;

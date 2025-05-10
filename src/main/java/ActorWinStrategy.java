@@ -51,7 +51,6 @@ public class ActorWinStrategy implements IWinStrategy {
         for (Person person : movie.getCast()) {
             if (person.getName().equalsIgnoreCase(targetActor)) {
                 currentCount++;
-                System.out.println("[DEBUG] " + targetActor + " movie found! Count: " + currentCount + "/" + requiredCount);
                 break; // Count the movie only once even if actor appears multiple times
             }
         }

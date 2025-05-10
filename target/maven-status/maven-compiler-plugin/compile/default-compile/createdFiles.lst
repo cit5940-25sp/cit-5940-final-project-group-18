@@ -7,7 +7,6 @@ GenreWinStrategy.class
 GameState.class
 GameController$1.class
 WinStrategyFactory.class
-WinStrategyDemo.class
 GameView$1.class
 TrieNode.class
 DirectorWinStrategy.class
