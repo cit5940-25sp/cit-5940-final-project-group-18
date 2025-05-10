@@ -82,4 +82,14 @@ public class Connection {
     public String getConnectionType() { 
         return connectionType; 
     }
+
+    /**
+     * Gets a human-readable description of how the movies are connected.
+     * The description includes the connector's name and their role in both movies.
+     *
+     * @return A string describing the connection between the movies
+     */
+    public String getDescription() {
+        return String.format("%s (%s)", connector.getName(), connectionType);
+    }
 }

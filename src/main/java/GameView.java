@@ -29,6 +29,7 @@ public class GameView {
     private boolean running = true;
     private GameState gameState;
     private ScheduledExecutorService displayTimer;
+    private String currentError = null;  // Add this field to store the current error message
 
     /**
      * Constructs a new GameView and initializes the terminal screen.
@@ -70,9 +71,8 @@ public class GameView {
             screen.clear();
             
             // Display timer and current player at the top with a border
-            String header = String.format("Time: %ds | Current Player: %s", 
-                state.getTimer(), state.getCurrentPlayer().getName());
-            printString(0, 0, "╔" + "═".repeat(header.length() + 2) + "╗");
+            String header = String.format("Round: %d | Time: %ds | Current Player: %s",
+                    state.getRoundCount(), state.getTimer(), state.getCurrentPlayer().getName());            printString(0, 0, "╔" + "═".repeat(header.length() + 2) + "╗");
             printString(0, 1, "║ " + header + " ║");
             printString(0, 2, "╚" + "═".repeat(header.length() + 2) + "╝");
 
@@ -83,8 +83,21 @@ public class GameView {
             if (movies.isEmpty()) {
                 printString(2, row++, "No movies played yet");
             } else {
-                for (Movie movie : movies) {
+                // Only show the last 5 movies
+                int startIndex = Math.max(0, movies.size() - 5);
+                for (int i = startIndex; i < movies.size(); i++) {
+                    Movie movie = movies.get(i);
                     printString(2, row++, "• " + movie.getTitle());
+                    
+                    // Show connection to previous movie if it exists
+                    if (i > startIndex) {
+                        Movie prevMovie = movies.get(i - 1);
+                        Connection connection = state.getMovieDatabase().validateConnection(prevMovie, movie);
+                        if (connection != null && connection.isValid()) {
+                            String connectionInfo = String.format("  ↳ Connected via: %s", connection.getDescription());
+                            printString(2, row++, connectionInfo);
+                        }
+                    }
                 }
             }
             printString(0, row++, "└" + "─".repeat(45) + "┘");
@@ -92,16 +105,21 @@ public class GameView {
             // Display player status with a section header
             row += 1;
             printString(0, row++, "┌─ Player Status ──────────────────────────────┐");
+
+            // Display win condition once (assuming all players have same win condition)
+            String winCondition = String.format("Win Condition: %s", state.getPlayers().get(0).getWinStrategy().getDescription());
+            printString(2, row++, "• " + winCondition);
+
+            // Display each player's progress
             for (Player player : state.getPlayers()) {
-                String status = String.format("%s: %d%%", 
-                    player.getName(), player.getProgress());
+                String status = String.format("%s: %d%%", player.getName(), player.getProgress());
                 printString(2, row++, "• " + status);
             }
             printString(0, row++, "└" + "─".repeat(45) + "┘");
 
             // Display input area with a prompt
             row += 1;
-            printString(0, row, "┌─ Enter Movie Title ───────────────────────────┐");
+            printString(0, row, "┌─ Enter Movie Title ──────────────────────────┐");
             row += 1;
             printString(2, row, "> " + currentInput.toString());
 
@@ -113,6 +131,19 @@ public class GameView {
                     printString(2, row++, "• " + suggestion);
                 }
                 printString(0, row++, "└" + "─".repeat(45) + "┘");
+            }
+
+            // Display error message if there is one
+            if (currentError != null) {
+                TerminalSize size = screen.getTerminalSize();
+                row = size.getRows() - 3;
+                printString(0, row, "┌─ Log ─────────────────────────────────────┐");
+                // Split error message into lines and display each line
+                String[] errorLines = currentError.split("\n");
+                for (int i = 0; i < errorLines.length; i++) {
+                    printString(2, row + 1 + i, "• " + errorLines[i]);
+                }
+                printString(0, row + errorLines.length + 1, "└" + "─".repeat(45) + "┘");
             }
 
             // Set cursor position for input
@@ -140,14 +171,10 @@ public class GameView {
      * @param error The error message to display
      */
     public void displayError(String error) {
+        this.currentError = error;  // Store the error message
         try {
-            TerminalSize size = screen.getTerminalSize();
-            int row = size.getRows() - 3;
-            printString(0, row, "┌─ Error ─────────────────────────────────────┐");
-            printString(2, row + 1, "• " + error);
-            printString(0, row + 2, "└" + "─".repeat(45) + "┘");
-            screen.refresh();
-        } catch (IOException e) {
+            displayGameState(gameState);  // Refresh the display with the new error
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
