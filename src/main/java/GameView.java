@@ -83,12 +83,22 @@ public class GameView {
             if (movies.isEmpty()) {
                 printString(2, row++, "No movies played yet");
             } else {
+                TerminalSize size = screen.getTerminalSize();
+                int maxLineLength = size.getColumns() - 4; // 2 for indent, 2 for bullet and space
                 // Only show the last 5 movies
                 int startIndex = Math.max(0, movies.size() - 5);
                 for (int i = startIndex; i < movies.size(); i++) {
                     Movie movie = movies.get(i);
-                    printString(2, row++, "• " + movie.getTitle());
-                    
+                    String genres = String.join(", ", movie.getGenres());
+                    // Dynamically allocate width: title (max 20), year (4), rest for genres
+                    int titleWidth = Math.min(20, Math.max(10, maxLineLength - 35)); // at least 10, at most 20
+                    String title = String.format("%-" + titleWidth + "." + titleWidth + "s", movie.getTitle());
+                    String year = String.format("%4d", movie.getYear());
+                    String base = String.format("• %s (Year: %s, Genres: ", title, year);
+                    int maxGenresLength = maxLineLength - base.length() - 1; // -1 for closing parenthesis
+                    String genresDisplay = genres.length() > maxGenresLength && maxGenresLength > 3 ? genres.substring(0, maxGenresLength - 3) + "..." : genres;
+                    String movieInfo = base + genresDisplay + ")";
+                    printString(2, row++, movieInfo);
                     // Show connection to previous movie if it exists
                     if (i > startIndex) {
                         Movie prevMovie = movies.get(i - 1);

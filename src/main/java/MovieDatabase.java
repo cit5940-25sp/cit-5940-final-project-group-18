@@ -234,7 +234,16 @@ public class MovieDatabase {
                 int id = Integer.parseInt(fields[3]);
                 String title = fields[17];
                 List<String> genres = parseGenres(fields[1]);
-                Movie movie = new Movie(id, title, 0, genres, new ArrayList<>(), new ArrayList<>());
+                String releaseDate = fields[11];
+                int year = 0;
+                if (releaseDate != null && releaseDate.length() >= 4) {
+                    try {
+                        year = Integer.parseInt(releaseDate.substring(0, 4));
+                    } catch (Exception e) {
+                        // fallback or log error
+                    }
+                }
+                Movie movie = new Movie(id, title, year, genres, new ArrayList<>(), new ArrayList<>());
                 idToMovie.put(id, movie);
                 movieNameIndex.put(title, movie);  // Add to name index but not trie yet
                 addMovie(movie);  // Add to genre index
