@@ -59,7 +59,6 @@ public class GameControllerTest {
         @Override
         public void displayError(String error) { 
             lastError = error; 
-            System.out.println("Error set to: " + error); // Add this for debugging
         }
 
         @Override
@@ -70,11 +69,6 @@ public class GameControllerTest {
         @Override
         public void displayAutocompleteSuggestions(List<String> suggestions) {
             displayedSuggestions.add("Suggestions updated");
-        }
-
-        @Override
-        public void updateTimer(int seconds) {
-            lastTimerUpdate = seconds;
         }
     }
 
