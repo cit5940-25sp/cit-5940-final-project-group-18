@@ -86,7 +86,17 @@ public class MovieNameGame {
             player2Strategy = new GenreWinStrategy(target, requiredCount);
             System.out.println("Your target genre is: " + target);
         }
+
+        IWinStrategy testThrillerStrategy1 = new GenreWinStrategy("Thriller", 3);
+        IWinStrategy testThrillerStrategy2 = new GenreWinStrategy("Thriller", 3);
+
         List<Player> players = new ArrayList<>();
+
+        // UNCOMMENT THIS TO TEST
+        // players.add(new Player("Player 1", testThrillerStrategy1));
+        // players.add(new Player("Player 2", testThrillerStrategy2));
+
+        // COMMENT THIS TO TEST
         players.add(new Player("Player 1", player1Strategy));
         players.add(new Player("Player 2", player2Strategy));
 

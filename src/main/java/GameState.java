@@ -67,9 +67,11 @@ public class GameState {
         }
 
         Player currentPlayer = getCurrentPlayer();
-        if (currentPlayer.hasPlayedMovie(movie.getTitle())) {
-            // Player already played this movie
-            return false;
+        for (Player p : players) {
+            if (p.hasPlayedMovie(movie.getTitle())) {
+                // Any player already played this movie
+                return false;
+            }
         }
 
         Movie lastMovie = playedMovies.isEmpty() ? null : playedMovies.get(playedMovies.size() - 1);

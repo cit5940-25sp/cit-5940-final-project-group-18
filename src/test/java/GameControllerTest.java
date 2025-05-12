@@ -278,4 +278,28 @@ public class GameControllerTest {
         // Verify game is over
         assertTrue(winningController.isGameOver());
     }
+
+    @Test
+    public void testEmptyAndNullStrings() {
+        Person person = new Person(1, "", "");
+        
+        assertEquals("", person.getName());
+        assertEquals("", person.getRole());
+        
+        // Test with null strings (should be handled by the constructor)
+        Person nullPerson = new Person(2, null, null);
+        assertNull(nullPerson.getName());
+        assertNull(nullPerson.getRole());
+    }
+
+    @Test
+    public void testCaseSensitivity() {
+        Person person1 = new Person(1, "John Doe", "Actor");
+        Person person2 = new Person(2, "JOHN DOE", "Actor");
+        
+        assertFalse("Name comparison should be case-sensitive", 
+            person1.equals(person2));
+        assertNotEquals("HashCode should be different for different case names", 
+            person1.hashCode(), person2.hashCode());
+    }
 }

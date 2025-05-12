@@ -5,6 +5,7 @@ import java.io.IOException;
 import com.opencsv.exceptions.CsvValidationException;
 import java.util.List;
 import java.util.Set;
+import java.util.ArrayList;
 
 /**
  * Test suite for the MovieDatabase class in the movie connection game.
@@ -107,6 +108,30 @@ public class MovieDatabaseTest {
         List<String> minLengthSuggestions = db.getAutocompleteSuggestionsWithMinLength("A", 10, 5);
         assertTrue("All suggestions should be at least 5 characters", 
             minLengthSuggestions.stream().allMatch(s -> s.length() >= 5));
+    }
+
+    /**
+     * Tests edge cases for autocomplete functionality.
+     * Verifies:
+     * - Empty prefix returns suggestions
+     * - Very long prefix returns empty list
+     * - Special characters return empty list
+     */
+    @Test
+    public void testAutocompleteEdgeCases() {
+        // Test empty prefix
+        List<String> emptyPrefixSuggestions = db.getAutocompleteSuggestions("", 5);
+        assertNotNull("Should return suggestions for empty prefix", emptyPrefixSuggestions);
+        assertFalse("Should not be empty for empty prefix", emptyPrefixSuggestions.isEmpty());
+
+        // Test very long prefix
+        String longPrefix = "A".repeat(100);
+        List<String> longPrefixSuggestions = db.getAutocompleteSuggestions(longPrefix, 5);
+        assertTrue("Should return empty list for very long prefix", longPrefixSuggestions.isEmpty());
+
+        // Test special characters
+        List<String> specialCharSuggestions = db.getAutocompleteSuggestions("A@#$", 5);
+        assertTrue("Should return empty list for special characters", specialCharSuggestions.isEmpty());
     }
 
     // ==================== CONNECTION TESTS ====================
@@ -237,5 +262,113 @@ public class MovieDatabaseTest {
             nolanMovies.stream().anyMatch(m -> m.getTitle().equals("The Dark Knight")));
         assertTrue("Should contain Inception", 
             nolanMovies.stream().anyMatch(m -> m.getTitle().equals("Inception")));
+    }
+
+    /**
+     * Tests random selection functionality.
+     * Verifies:
+     * - Random genre selection returns a valid genre
+     * - Random actor selection returns a valid actor
+     * - Random director selection returns a valid director
+     */
+    @Test
+    public void testRandomSelection() {
+        // Test random genre selection
+        String randomGenre = db.getRandomGenre();
+        assertNotNull("Should return a random genre", randomGenre);
+        assertTrue("Should be a valid genre", db.getAllGenres().contains(randomGenre));
+
+        // Test random actor selection
+        String randomActor = db.getRandomActor();
+        assertNotNull("Should return a random actor", randomActor);
+        assertTrue("Should be a valid actor", db.getAllActors().contains(randomActor));
+
+        // Test random director selection
+        String randomDirector = db.getRandomDirector();
+        assertNotNull("Should return a random director", randomDirector);
+        assertTrue("Should be a valid director", db.getAllDirectors().contains(randomDirector));
+    }
+
+    /**
+     * Tests handling of null and empty input.
+     * Verifies:
+     * - Null movie title returns null
+     * - Empty movie title returns null
+     * - Null genre returns empty list
+     * - Null person name returns empty set
+     */
+    @Test
+    public void testNullAndEmptyInput() {
+        // Test null movie title
+        assertNull("Should return null for null movie title", db.findMovie(null));
+
+        // Test empty movie title
+        assertNull("Should return null for empty movie title", db.findMovie(""));
+
+        // Test null genre
+        List<Movie> nullGenreMovies = db.getMoviesByGenre(null);
+        assertNotNull("Should return empty list for null genre", nullGenreMovies);
+        assertTrue("Should be empty for null genre", nullGenreMovies.isEmpty());
+
+        // Test null person name
+        Set<Movie> nullPersonMovies = db.getMoviesByPerson(null);
+        assertNotNull("Should return empty set for null person", nullPersonMovies);
+        assertTrue("Should be empty for null person", nullPersonMovies.isEmpty());
+    }
+
+    /**
+     * Tests movie validation logic.
+     * Verifies:
+     * - Invalid movie is not in autocomplete suggestions
+     * - Valid movie is in autocomplete suggestions
+     */
+    @Test
+    public void testMovieValidation() {
+        // Create a movie without cast/crew
+        Movie invalidMovie = new Movie(999, "Invalid Movie", 2023, 
+            List.of("Action"), new ArrayList<>(), new ArrayList<>());
+        
+        // Add the invalid movie
+        db.addMovie(invalidMovie);
+        
+        // Verify it's not in autocomplete suggestions
+        List<String> suggestions = db.getAutocompleteSuggestions("Invalid", 5);
+        assertFalse("Invalid movie should not be in suggestions", 
+            suggestions.contains("Invalid Movie"));
+
+        // Create a valid movie
+        Movie validMovie = new Movie(1000, "Valid Movie", 2023, 
+            List.of("Action"), 
+            List.of(new Person(1, "Test Actor", "Character")),
+            List.of(new Person(2, "Test Director", "Director")));
+        
+        // Add the valid movie
+        db.addMovie(validMovie);
+        
+        // Verify it's in autocomplete suggestions
+        suggestions = db.getAutocompleteSuggestions("Valid", 5);
+        assertTrue("Valid movie should be in suggestions", 
+            suggestions.contains("Valid Movie"));
+    }
+
+    /**
+     * Tests genre and person indexing.
+     * Verifies:
+     * - Genre indexing is case-sensitive
+     * - Person indexing is case-sensitive
+     */
+    @Test
+    public void testIndexing() {
+        // Test genre indexing
+        List<Movie> actionMovies = db.getMoviesByGenre("Action");
+        List<Movie> actionMoviesLower = db.getMoviesByGenre("action");
+        assertNotEquals("Genre indexing should be case-sensitive", 
+            actionMovies.size(), actionMoviesLower.size());
+
+        // Test person indexing
+        Set<Movie> nolanMovies = db.getMoviesByPerson("Christopher Nolan");
+        Set<Movie> nolanMoviesLower = db.getMoviesByPerson("christopher nolan");
+        assertNotEquals("Person indexing should be case-sensitive", 
+            nolanMovies.size(), nolanMoviesLower.size());
     }
 }
